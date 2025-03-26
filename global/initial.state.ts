@@ -4,7 +4,7 @@ import { AppState, IUser } from "@/interface";
 let user: IUser | null = FetchUser();
 
 const initialState: AppState = {
-  user: null,
+  user: user,
   users: [],
   projects: [],
   currentProject: null,

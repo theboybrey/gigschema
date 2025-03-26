@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, ReactNode, useContext, useReducer } from "react"
+import React, { createContext, ReactNode } from "react"
 import { notifier } from "@/components/notifier"
 import { IUser } from "@/interface"
 import { useRouter } from "next/navigation"
@@ -25,72 +25,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const router = useRouter()
 
-    function setAuthState(user: IUser | null) {
+    const setAuthState = (user: IUser | null) => {
         if (user) {
             localStorage.setItem('user', JSON.stringify(user))
+        } else {
+            localStorage.removeItem('user')
         }
-        setState(prev => ({ ...prev, user }))
+        setState(prev => ({ ...prev, user, loading: false }))
     }
 
-    function handleLogout() {
-        setState(prev => ({ ...prev, user: null }))
+    const handleLogout = () => {
+        setState(prev => ({ ...prev, user: null, loading: false }))
         localStorage.removeItem('user')
         router.push('/auth')
     }
 
-    async function initialize() {
+    const initialize = async () => {
         try {
             setState(prev => ({ ...prev, loading: true, error: null }))
-
-            const user = JSON.parse(localStorage.getItem('user') ?? 'null') as IUser | null
+            const user = JSON.parse(localStorage.getItem('user') || 'null') as IUser | null
 
             if (!user) {
-                setState(prev => ({ ...prev, loading: false }))
+                setState(prev => ({ ...prev, user: null, loading: false }))
                 return
             }
 
-            let token = localStorage.getItem('token')
-
-            if (!token) {
-                handleLogout()
-                return
-            }
-
+            // Simulate token validation or API call here if needed
+            setState(prev => ({ ...prev, user, loading: false }))
         } catch (error) {
             console.error(error)
             notifier.error('Failed to initialize authentication.', 'Authentication Error')
-            setState(
-                prev => ({ ...prev, loading: false, error: error as Error })
-            )
+            setState(prev => ({ ...prev, loading: false, error: error as Error }))
         }
     }
 
     React.useEffect(() => {
-        let mounted = true
-        let initializeTimeout: NodeJS.Timeout
-
-        const handeleStorageChange = (event: StorageEvent) => {
-            if(['user'].includes(event.key ?? '')){
-                clearTimeout(initializeTimeout)
-                initializeTimeout = setTimeout(() => {
-                    if(mounted){
-                        initialize()
-                    }
-                }, 500)
-            }
-        }
-
-        window.addEventListener('storage', handeleStorageChange)
-
-        if (mounted) {
-            initialize()
-        }
-
-        return () => {
-            mounted = false
-            clearTimeout(initializeTimeout)
-            window.removeEventListener('storage', handeleStorageChange)
-        }
+        initialize()
     }, [])
 
     return (
@@ -99,4 +69,3 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         </AuthContext.Provider>
     )
 }
-
