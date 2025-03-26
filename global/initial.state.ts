@@ -18,3 +18,5 @@ const initialState: AppState = {
   isLoading: false,
   error: null,
 };
+
+export default initialState;

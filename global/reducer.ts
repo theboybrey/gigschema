@@ -29,7 +29,7 @@ export type AppAction =
   | { type: "ROLLBACK_PROJECT"; payload: IProject }
   | { type: "ROLLBACK_CONVERSATION"; payload: IMessage[] };
 
-export const reducer = produce((state: Draft<AppState>, action: AppAction) => {
+export const RootReducer = produce((state: Draft<AppState>, action: AppAction) => {
   switch (action.type) {
     case "SET_USER":
       state.user = action.payload;
