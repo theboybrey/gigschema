@@ -1,0 +1,232 @@
+@import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&family=Raleway:ital,wght@0,100..900;1,100..900&family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&family=Syne:wght@400..800&display=swap");
+@import url("https://fonts.vercel.com/geist-sans.css");
+@import url("https://fonts.vercel.com/geist-mono.css");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --font-geist-sans: "Geist Sans", sans-serif;
+    --font-geist-mono: "Geist Mono", monospace;
+
+    /* Primary colors using MDOT red */
+    --primary: 358 98% 31%; /* #9D0208 - MDOT's signature red */
+    --primary-foreground: 0 0% 98%;
+
+    /* Secondary using darker red */
+    --secondary: 353 89% 11%; /* #370617 */
+    --secondary-foreground: 0 0% 98%;
+
+    /* Accent using orange */
+    --accent: 28 94% 49%; /* #E85D04 */
+    --accent-foreground: 0 0% 98%;
+
+    /* Standard UI colors */
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    /* Destructive using bright red */
+    --destructive: 0 100% 41%; /* #D00000 */
+    --destructive-foreground: 0 0% 98%;
+
+    /* UI elements */
+    /* --border: 240 5.9% 90%; */
+    --input: 240 5.9% 90%;
+    --ring: 358 98% 31%; /* Based on primary */
+
+    /* Chart colors using MDOT palette */
+    --chart-1: 358 98% 31%; /* #9D0208 - Primary red */
+    --chart-2: 35 97% 51%; /* #FFBA08 - Yellow-orange */
+    --chart-3: 23 97% 44%; /* #E85D04 - Orange */
+    --chart-4: 353 89% 11%; /* #370617 - Dark red */
+    --chart-5: 14 98% 43%; /* #DC2F02 - Red-orange */
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 234 85% 6%; /* #03071E - MDOT's darkest color */
+    --foreground: 0 0% 98%;
+
+    /* Primary colors - brighter in dark mode */
+    --primary: 358 98% 31%; /* #9D0208 - keeping MDOT's red */
+    --primary-foreground: 0 0% 98%;
+
+    /* Secondary using orange */
+    --secondary: 35 97% 51%; /* #FFBA08 */
+    --secondary-foreground: 234 85% 6%;
+
+    /* Accent using bright orange */
+    --accent: 23 97% 44%; /* #E85D04 */
+    --accent-foreground: 0 0% 98%;
+
+    /* Standard UI colors */
+    --card: 234 85% 6%; /* Based on background */
+    --card-foreground: 0 0% 98%;
+    --popover: 234 85% 6%; /* Based on background */
+    --popover-foreground: 0 0% 98%;
+    --muted: 234 85% 12%;
+    --muted-foreground: 240 5% 64.9%;
+
+    /* Destructive using bright red */
+    --destructive: 0 100% 41%; /* #D00000 */
+    --destructive-foreground: 0 0% 98%;
+
+    /* UI elements */
+    /* --border: 240 3.7% 15.9%; */
+    --input: 234 85% 12%;
+    --ring: 358 98% 31%; /* Based on primary */
+
+    /* Chart colors - adjusted for dark mode */
+    --chart-1: 358 98% 31%; /* #9D0208 - Primary red */
+    --chart-2: 35 97% 51%; /* #FFBA08 - Yellow-orange */
+    --chart-3: 23 97% 44%; /* #E85D04 - Orange */
+    --chart-4: 14 98% 43%; /* #DC2F02 - Red-orange */
+    --chart-5: 0 100% 41%; /* #D00000 - Bright red */
+  }
+}
+
+@layer base {
+  * {
+  }
+  body {
+    font-family: var(--font-geist-sans) !important; 
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+}
+
+@keyframes toastSlideIn {
+  from {
+    transform: translateX(calc(100% + var(--viewport-padding)));
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toastSlideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(calc(100% + var(--viewport-padding)));
+    opacity: 0;
+  }
+}
+
+@keyframes toastSwipeOut {
+  from {
+    transform: translateX(var(--radix-toast-swipe-end-x));
+    opacity: 1;
+  }
+  to {
+    transform: translateX(calc(100% + var(--viewport-padding)));
+    opacity: 0;
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 0.2;
+  }
+  100% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+}
+
+.toast-viewport-hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.toast-viewport-hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+::-webkit-scrollbar {
+  width: 3px;
+  display: none !important;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #6b7280 !important;
+  border-radius: 40px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: transparent inherit;
+}
+
+@keyframes toast-slide-in {
+  from {
+    transform: translateY(-100%) scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-hide {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes toast-swipe-out {
+  from {
+    transform: translateX(var(--radix-toast-swipe-end-x));
+  }
+  to {
+    transform: translateX(calc(100% + 1rem));
+  }
+}
+
+.font-mono {
+  font-family: "GeistMono" !important;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+.font-syne {
+  font-family: "Syne" !important;
+}
+
+.font-schibsted {
+  font-family: "Schibsted Grotesk" !important;
+}
+
+
