@@ -1,10 +1,11 @@
 import { RetryOperation } from "@/helper/operation.retry";
 import {
-    IContinueConversationDTO,
-    ICreateProjectDTO,
-    IProject,
+  IContinueConversationDTO,
+  ICreateProjectDTO,
+  IProject,
 } from "@/interface/";
 import Axios from "../axios";
+import { notifier } from "@/components/notifier";
 
 interface ApiResponse<T> {
   project?: T;
@@ -12,71 +13,195 @@ interface ApiResponse<T> {
   message?: string;
 }
 
-export const FetchAllProjects = async (): Promise<IProject[]> => {
-  const operation = async () => {
-    const response = await Axios.get<ApiResponse<IProject>>("/project");
-    return response.data.projects || [];
-  };
-  return RetryOperation(operation);
-};
+export async function CreateProject(
+  info: Partial<IProject>,
+  token: string,
+  setLoading: (loading: boolean) => void,
+  callback: (response: ApiResponse<IProject>) => void
+) {
+  setLoading(true);
 
-export const FetchProjectById = async (id: string): Promise<IProject> => {
-  const operation = async () => {
-    const response = await Axios.get<ApiResponse<IProject>>(`/project/${id}`);
-    if (!response.data.project) throw new Error("Project not found");
-    return response.data.project;
-  };
-  return RetryOperation(operation);
-};
+  try {
+    const response = await Axios({
+      url: "/project/",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      data: info,
+    });
 
-export const CreateProject = async (
-  data: ICreateProjectDTO
-): Promise<IProject> => {
-  const operation = async () => {
-    const response = await Axios.post<ApiResponse<IProject>>("/project", data);
-    if (!response.data.project) throw new Error("Failed to create project");
-    return response.data.project;
-  };
-  return RetryOperation(operation);
-};
+    const data = response.data as ApiResponse<IProject>;
 
-export const UpdateProject = async (
-  id: string,
-  data: Partial<ICreateProjectDTO> & { _schema?: any }
-): Promise<IProject> => {
-  const operation = async () => {
-    const response = await Axios.put<ApiResponse<IProject>>(
-      `/project/${id}`,
-      data
-    );
-    if (!response.data.project) throw new Error("Failed to update project");
-    return response.data.project;
-  };
-  return RetryOperation(operation);
-};
-
-export const DeleteProject = async (id: string): Promise<void> => {
-  const operation = async () => {
-    const response = await Axios.delete<ApiResponse<never>>(`/project/${id}`);
-    if (response.data.message !== "Project deleted successfully") {
-      throw new Error("Failed to delete project");
+    if (data && data.project) {
+      notifier.success("New schema document created", "Project Created");
+      callback(data);
     }
-  };
-  return RetryOperation(operation);
-};
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.message || error?.message;
+    notifier.error(errorMessage, "Project Creation Error");
+  } finally {
+    setLoading(false);
+  }
+}
 
-export const ContinueConversation = async (
+export async function ContinueConversation(
   id: string,
-  data: IContinueConversationDTO
-): Promise<IProject> => {
-  const operation = async () => {
-    const response = await Axios.post<ApiResponse<IProject>>(
-      `/project/${id}/conversation`,
-      data
-    );
-    if (!response.data.project)
-      throw new Error("Failed to continue conversation");
-    return response.data.project;
-  };
-  return RetryOperation(operation);
-};
+  info: IContinueConversationDTO,
+  token: string,
+  setLoading: (loading: boolean) => void,
+  callback: (response: ApiResponse<IProject>) => void
+) {
+  setLoading(true);
+
+  try {
+    const response = await Axios({
+      url: `/project/${id}/conversation`,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      data: info,
+    });
+
+    const data = response.data as ApiResponse<IProject>;
+
+    if (data && data.project) {
+      callback(data);
+    }
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.message || error?.message;
+    notifier.error(errorMessage, "Conversation Error");
+  } finally {
+    setLoading(false);
+  }
+}
+
+export async function GetProjects(
+  token: string,
+  setLoading: (loading: boolean) => void,
+  callback: (response: ApiResponse<IProject[]>) => void
+) {
+  setLoading(true);
+
+  try {
+    const response = await Axios({
+      url: "/project/",
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = response.data as ApiResponse<IProject[]>;
+
+    if (data && data.projects) {
+      callback(data);
+    }
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.message || error?.message;
+    notifier.error(errorMessage, "Project Fetch Error");
+  } finally {
+    setLoading(false);
+  }
+}
+
+export async function GetProject(
+  id: string,
+  token: string,
+  setLoading: (loading: boolean) => void,
+  callback: (response: ApiResponse<IProject>) => void
+) {
+  setLoading(true);
+
+  try {
+    const response = await Axios({
+      url: `/project/${id}`,
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = response.data as ApiResponse<IProject>;
+
+    if (data && data.project) {
+      callback(data);
+    }
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.message || error?.message;
+    notifier.error(errorMessage, "Project Fetch Error");
+  } finally {
+    setLoading(false);
+  }
+}
+
+export async function UpdateProject(
+  id: string,
+  info: Partial<IProject>,
+  token: string,
+  setLoading: (loading: boolean) => void,
+  callback: (response: ApiResponse<IProject>) => void
+) {
+  setLoading(true);
+
+  try {
+    const response = await Axios({
+      url: `/project/${id}`,
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      data: info,
+    });
+
+    const data = response.data as ApiResponse<IProject>;
+
+    if (data && data.project) {
+      notifier.success("Schema document updated", "Project Updated");
+      callback(data);
+    }
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.message || error?.message;
+    notifier.error(errorMessage, "Project Update Error");
+  } finally {
+    setLoading(false);
+  }
+}
+
+export async function DeleteProject(
+  id: string,
+  token: string,
+  setLoading: (loading: boolean) => void,
+  callback: (response: ApiResponse<IProject>) => void
+) {
+  setLoading(true);
+
+  try {
+    const response = await Axios({
+      url: `/project/${id}`,
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = response.data as ApiResponse<IProject>;
+
+    if (data && data.project) {
+      notifier.success("Schema document deleted", "Project Deleted");
+      callback(data);
+    }
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.message || error?.message;
+    notifier.error(errorMessage, "Project Deletion Error");
+  } finally {
+    setLoading(false);
+  }
+}
