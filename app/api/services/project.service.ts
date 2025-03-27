@@ -13,38 +13,34 @@ interface ApiResponse<T> {
   message?: string;
 }
 
-export async function CreateProject(
-  info: Partial<IProject>,
+export const CreateProject = async (
+  info: { name: string; description: string; schemaType: "sql" | "nosql" },
   token: string,
   setLoading: (loading: boolean) => void,
   callback: (response: ApiResponse<IProject>) => void
-) {
+) => {
   setLoading(true);
-
   try {
-    const response = await Axios({
-      url: "/project",
-      method: "POST",
+    const response = await Axios.post<ApiResponse<IProject>>("/project", info, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      data: info,
     });
-
-    const data = response.data as ApiResponse<IProject>;
-
-    if (data && data.project) {
+    const data = response.data;
+    if (data.project) {
       notifier.success("New schema document created", "Project Created");
       callback(data);
     }
   } catch (error: any) {
-    const errorMessage = error.response?.data?.message || error?.message;
+    const errorMessage =
+      error.response?.data?.message || error?.message || "Unknown error";
     notifier.error(errorMessage, "Project Creation Error");
+    throw error;
   } finally {
     setLoading(false);
   }
-}
+};
 
 export async function ContinueConversation(
   id: string,
