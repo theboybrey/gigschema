@@ -96,7 +96,7 @@ export async function RegisterAccount(
   setLoading(true);
   try {
     const { data } = await Axios({
-      url: `/user/`,
+      url: `/user/register`,
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -130,7 +130,7 @@ export async function VerifyAccount(
   setLoading(true);
   try {
     const { data } = await Axios({
-      url: `/user/verify-email/${token}`,
+      url: `/user/${token}/verify`,
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -239,6 +239,113 @@ export async function ResetPassword(
         "Content-Type": "application/json",
       },
       data: { password },
+    });
+    if (!data.success) {
+      setLoading(false);
+      notifier.error(
+        data?.message || `Security update failed for password reset`,
+        `Password Reset Failed`
+      );
+    }
+    callback(data?.data);
+  } catch (error: any) {
+    notifier.error(
+      error?.message ||
+        error?.response?.data?.message ||
+        `Something went wrong during password reset`,
+      `Password Reset Failed`
+    );
+  } finally {
+    setLoading(false);
+  }
+}
+
+export async function GetProfile(
+  token: string,
+  setLoading: (loading: boolean) => void,
+  callback: (e: any) => void
+) {
+  try {
+    const { data } = await Axios({
+      url: `/user/profile`,
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!data.success) {
+      setLoading(false);
+      notifier.error(
+        data?.message || `Security update failed for password reset`,
+        `Password Reset Failed`
+      );
+    }
+    callback(data?.data);
+  } catch (error: any) {
+    notifier.error(
+      error?.message ||
+        error?.response?.data?.message ||
+        `Something went wrong during password reset`,
+      `Password Reset Failed`
+    );
+  } finally {
+    setLoading(false);
+  }
+}
+
+export async function UpdateProfile(
+  updates: Partial<IUser>,
+  token: string,
+  setLoading: (loading: boolean) => void,
+  callback: (e: any) => void
+) {
+  try {
+    const { data } = await Axios({
+      url: `/user/profile`,
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      data: { ...updates },
+    });
+    if (!data.success) {
+      setLoading(false);
+      notifier.error(
+        data?.message || `Security update failed for password reset`,
+        `Password Reset Failed`
+      );
+    }
+    callback(data?.data);
+  } catch (error: any) {
+    notifier.error(
+      error?.message ||
+        error?.response?.data?.message ||
+        `Something went wrong during password reset`,
+      `Password Reset Failed`
+    );
+  } finally {
+    setLoading(false);
+  }
+}
+
+export async function ChangePassword(
+  id: string,
+  token: string,
+  info: { oldPassword: string; newPassword: string },
+  setLoading: (loading: boolean) => void,
+  callback: (e: any) => void
+) {
+  try {
+    const { data } = await Axios({
+      url: `/user/change-password/${id}`,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      data: { ...info },
     });
     if (!data.success) {
       setLoading(false);

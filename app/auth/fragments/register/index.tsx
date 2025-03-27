@@ -1,30 +1,22 @@
 "use client"
 
-import Image from 'next/image'
+import { LoginResponse, RegisterAccount } from '@/app/api/services/user.service'
 import { Button } from '@/components/button'
 import { Card } from '@/components/card'
+import { notifier } from '@/components/notifier'
 import { AuthContext } from '@/context/auth.context'
-import { RegisterAccount, LoginResponse } from '@/app/api/services/user.service'
+import { useStateValue } from '@/global/state.provider'
 import {
-  Eye,
-  EyeOff,
-  Loader2,
-  Check,
-  ArrowRight,
-  ArrowLeft,
-  UserCircle2,
-  UserCircle, //
   Info,
-  Venus,
-  Mars
+  Loader2,
+  Mars,
+  Venus
 } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import React, { useContext, useState } from 'react'
-import { useForm, Controller } from 'react-hook-form'
-import { useStateValue } from '@/global/state.provider'
-import { notifier } from '@/components/notifier'
-import { RiWalkFill, RiWalkLine } from '@remixicon/react'
+import { useContext, useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 
 interface RegisterFormData {
   firstName: string;
@@ -34,6 +26,7 @@ interface RegisterFormData {
   confirmPassword: string;
   role: 'system' | 'admin' | 'user' | undefined
   gender: 'male' | 'female' | 'unknown' | undefined
+  phone: string
 }
 
 const RegisterPage = () => {
@@ -67,17 +60,24 @@ const RegisterPage = () => {
       password: '',
       confirmPassword: '',
       role: 'user',
-      gender: 'unknown'
+      gender: 'unknown',
+      phone: ''
     }
   });
 
-  // Validation functions
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email) return "Email is required";
     if (!emailRegex.test(email)) return "Invalid email format";
     return true;
   };
+
+  const validatePhone = (phone: string) => {
+    const phoneRegex = /^[+]?[0-9]{10,14}$/;
+    if (!phone) return "Phone number is required";
+    if (!phoneRegex.test(phone)) return "Invalid phone number format";
+    return true;
+  }
 
   const validatePassword = (password: string) => {
     if (!password) return "Password is required";
@@ -87,14 +87,13 @@ const RegisterPage = () => {
     return true;
   };
 
-  // Step validation functions
   const validateStep1 = async () => {
     const result = await trigger(['firstName', 'lastName']);
     return result;
   };
 
   const validateStep2 = async () => {
-    const result = await trigger(['email']);
+    const result = await trigger(['email', 'phone']);
     return result;
   };
 
@@ -108,7 +107,6 @@ const RegisterPage = () => {
     return result;
   };
 
-  // Handle navigation between steps
   const handleNextStep = async () => {
     let isValid = false;
     switch (currentStep) {
@@ -131,7 +129,6 @@ const RegisterPage = () => {
     }
   };
 
-  // Form submission handler
   const onSubmit = async (data: RegisterFormData) => {
     setLoading(true);
 
@@ -141,7 +138,8 @@ const RegisterPage = () => {
         lastName: data.lastName.trim(),
         email: data.email.trim(),
         password: data.password.trim(),
-        role: data.role
+        role: data.role,
+        phone: data.phone
       }, setLoading, async (responseData: LoginResponse) => {
         if (responseData && responseData.user) {
           setAuthState(responseData.user);
@@ -149,7 +147,6 @@ const RegisterPage = () => {
             type: 'SET_USER',
             payload: responseData.user
           });
-          // Small delay to ensure state is set
           await new Promise(resolve => setTimeout(resolve, 100));
           router.replace("/");
         }
@@ -157,7 +154,6 @@ const RegisterPage = () => {
     } catch (error: any) {
       console.error('Registration error:', error);
 
-      // Handle different types of errors
       if (error?.errors) {
         Object.entries(error.errors).forEach(([key, message]) => {
           setError(key as keyof RegisterFormData, {
@@ -176,7 +172,6 @@ const RegisterPage = () => {
     }
   };
 
-  // Render step progress indicator
   const renderStepIndicator = () => {
     return (
       <div className="flex justify-center items-center space-x-2 mb-6">
@@ -193,7 +188,6 @@ const RegisterPage = () => {
     );
   };
 
-  // Render step-specific content
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
@@ -273,6 +267,44 @@ const RegisterPage = () => {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                Phone
+              </label>
+              <Controller
+                name="phone"
+                control={control}
+                rules={{
+                  required: "Phone is required",
+                  validate: (value) => {
+                    const emailValidation = validatePhone(value);
+                    return emailValidation === true || emailValidation;
+                  }
+                }}
+                render={({ field }) => (
+                  <div>
+                    <input
+                      {...field}
+                      type="phone"
+                      placeholder="0209685612"
+                      className={`w-full px-4 py-3 rounded-lg border text-sm 
+                        ${errors.phone
+                          ? 'border-red-300 focus:ring-red-500'
+                          : 'border-gray-300 focus:ring-blue-500'
+                        } 
+                        focus:outline-none focus:ring-2 focus:border-transparent`}
+                    />
+                    {errors.phone && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.phone.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+              />
+
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address
               </label>
               <Controller
@@ -311,6 +343,7 @@ const RegisterPage = () => {
                 We'll send a verification email to confirm your account
               </div>
             </div>
+
           </div>
         );
       case 3:
@@ -508,7 +541,6 @@ const RegisterPage = () => {
     }
   };
 
-  // Render step navigation buttons
   const renderStepNavigation = () => {
     return (
       <div className="flex w-full justify-between mt-6 gap-2">
