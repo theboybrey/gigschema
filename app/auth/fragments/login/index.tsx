@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation'
 import React, { useContext, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { useStateValue } from '@/global/state.provider'
+import { notifier } from '@/components/notifier'
 
 interface LoginFormData {
   email: string;
@@ -130,7 +131,7 @@ const LoginFragment = () => {
       />
 
       <div className="relative z-10 w-full max-w-md px-6">
-        <Card className="p-8 shadow-2xl  backdrop-blur-sm">
+        <Card className="p-8 shadow-2xl  backdrop-blur-sm rounded-3xl">
           <div className="text-center mb-6">
             <h2 className="text-3xl font-medium font-syne text-gray-900 mb-2">
               Gigschema
@@ -178,7 +179,7 @@ const LoginFragment = () => {
                   Password
                 </label>
                 <Link
-                  href="/auth/forgot-password"
+                  href="/auth?password=forgot"
                   className="text-sm text-blue-600 hover:text-blue-800"
                 >
                   Forgot Password?
@@ -214,7 +215,7 @@ const LoginFragment = () => {
 
             <Button
               type="submit"
-              className="w-full"
+              className="w-full py-2 px-3 bg-blue-600 text-white font-medium hover:bg-blue-700 rounded-full"
               disabled={loading}
             >
               {loading ? (
@@ -227,7 +228,7 @@ const LoginFragment = () => {
               <p className="text-sm text-gray-600">
                 Don't have an account?{' '}
                 <Link
-                  href="/auth/signup"
+                  href="/auth?u=new"
                   className="font-medium text-blue-600 hover:text-blue-800"
                 >
                   Sign Up
@@ -236,6 +237,52 @@ const LoginFragment = () => {
             </div>
           </form>
         </Card>
+        <Card className='mt-4 rounded-full shadow-lg p-0 border border-gray-300 '>
+          <div className="p-0">
+            <button
+              onClick={() => { 
+                notifier.info('Feature not implemented yet', 'Coming Soon')
+              }}
+              className="w-full flex items-center justify-center gap-3 py-3 px-4 
+                          rounded-full 
+                         hover:bg-gray-50 transition-colors 
+                         focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <Image
+                src="/media/google.svg"
+                alt="Google Logo"
+                width={24}
+                height={24}
+              />
+              <span className="text-gray-700 font-medium">
+                Continue with Google
+              </span>
+            </button>
+          </div>
+        </Card>
+
+        <div className="mt-8 text-center text-sm text-gray-600 space-y-2">
+          <p className="px-4">
+            By signing in, you agree to our{' '}
+            <Link
+              href="/terms"
+              className="text-blue-600 hover:text-blue-800 
+                         transition-colors font-medium"
+            >
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link
+              href="/privacy"
+              className="text-blue-600 hover:text-blue-800 
+                         transition-colors font-medium"
+            >
+              Privacy Policy
+            </Link>
+          </p>
+
+        </div>
+
       </div>
     </div>
   )

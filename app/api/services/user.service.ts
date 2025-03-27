@@ -96,7 +96,7 @@ export async function RegisterAccount(
   setLoading(true);
   try {
     const { data } = await Axios({
-      url: `/user/new`,
+      url: `/user/`,
       method: "POST",
       headers: {
         "Content-Type": "application/json",
