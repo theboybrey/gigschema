@@ -1,195 +1,16 @@
-import React, { useState, useContext, useEffect } from "react";
-import {
-    PlusIcon,
-    XIcon,
-    FolderPlus,
-    Database,
-    FileText,
-    ChevronRight, 
-} from "lucide-react";
-import { useStateValue } from "@/global/state.provider";
-import { AuthContext } from "@/context/auth.context";
-import {
-    GetProjects,
-    CreateProject as CreateProjectService
-} from "@/app/api/services/project.service";
 import { GetChats } from "@/app/api/services/chat.service";
+import { GetProjects } from "@/app/api/services/project.service";
+import { AuthContext } from "@/context/auth.context";
+import { useStateValue } from "@/global/state.provider";
+import { PlusIcon, ChevronDownIcon, SettingsIcon, LogOutIcon, UserIcon } from "lucide-react";
+import { useContext, useEffect, useState } from "react";
 import NewProjectModal from "../new-chat";
-
-// const NewProjectModal = ({ isOpen, onClose }: {
-//     isOpen: boolean;
-//     onClose: () => void;
-// }) => {
-//     const { state, dispatch } = useStateValue();
-//     const authContext = useContext(AuthContext);
-
-//     const [loading, setLoading] = useState(false);
-//     const [details, setDetails] = useState({
-//         name: "",
-//         description: "",
-//         schemaType: "sql",
-//     });
-
-//     const projectTemplates = [
-//         {
-//             name: "E-commerce Database",
-//             icon: <Database className="text-blue-500 w-6 h-6" />,
-//             description: "Typical schema for online retail platforms"
-//         },
-//         {
-//             name: "User Management",
-//             icon: <FileText className="text-green-500 w-6 h-6" />,
-//             description: "Standard user authentication and profile schema"
-//         }
-//     ];
-
-//     const handleChange = (e: any) => {
-//         const { name, value } = e.target;
-//         setDetails((prev) => ({ ...prev, [name]: value }));
-//     };
-
-//     const handleSubmit = async (e: React.FormEvent) => {
-//         e.preventDefault();
-//         if (!authContext?.token) return;
-
-//         setLoading(true);
-//         try {
-//             await CreateProjectService(details as any, authContext.token, setLoading, (response) => {
-//                 if (response.project) {
-//                     dispatch({
-//                         type: "SET_PROJECTS",
-//                         payload: [...state.projects, response.project]
-//                     });
-//                     onClose();
-//                 }
-//             });
-//         } catch (error) {
-//             console.error("Project creation failed:", error);
-//         } finally {
-//             setLoading(false);
-//         }
-//     };
-
-//     if (!isOpen) return null;
-
-//     return (
-//         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-//             <div className="bg-white w-[95%] max-w-2xl rounded-2xl shadow-2xl p-8">
-//                 <div className="flex justify-between items-center mb-6 ">
-//                     <h2 className="text-2xl font-medium font-syne text-gray-800 flex items-center">
-//                         <FolderPlus className="mr-3 text-gray-800" />
-//                         Create New Project
-//                     </h2>
-//                     <button
-//                         onClick={onClose}
-//                         className="text-gray-500 hover:text-gray-800 transition-colors"
-//                     >
-//                         <XIcon className="w-6 h-6" />
-//                     </button>
-//                 </div>
-
-//                 <div className="grid md:grid-cols-2 gap-6">
-//                     {/* Project Details Form */}
-//                     <form onSubmit={handleSubmit} className="space-y-4">
-//                         <div>
-//                             <label className="block text-sm font-medium text-gray-700 mb-2">
-//                                 Project Name
-//                             </label>
-//                             <input
-//                                 type="text"
-//                                 name="name"
-//                                 value={details.name}
-//                                 onChange={handleChange}
-//                                 placeholder="Enter project name"
-//                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-//                                 required
-//                             />
-//                         </div>
-
-//                         <div>
-//                             <label className="block text-sm font-medium text-gray-700 mb-2">
-//                                 Description
-//                             </label>
-//                             <textarea
-//                                 name="description"
-//                                 value={details.description}
-//                                 onChange={handleChange}
-//                                 placeholder="Brief project description"
-//                                 rows={3}
-//                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-//                             />
-//                         </div>
-
-//                         <div>
-//                             <label className="block text-sm font-medium text-gray-700 mb-2">
-//                                 Schema Type
-//                             </label>
-//                             <div className="grid grid-cols-2 gap-3">
-//                                 {["sql", "nosql"].map((type) => (
-//                                     <label
-//                                         key={type}
-//                                         className={`
-//                       flex items-center justify-center p-3 border rounded-lg cursor-pointer
-//                       ${details.schemaType === type
-//                                                 ? "bg-blue-50 border-blue-500 text-blue-700"
-//                                                 : "border-gray-300 text-gray-600 hover:bg-gray-50"}
-//                     `}
-//                                     >
-//                                         <input
-//                                             type="radio"
-//                                             name="schemaType"
-//                                             value={type}
-//                                             checked={details.schemaType === type}
-//                                             onChange={() => setDetails(prev => ({ ...prev, schemaType: type }))}
-//                                             className="hidden"
-//                                         />
-//                                         <span className="capitalize">{type}</span>
-//                                     </label>
-//                                 ))}
-//                             </div>
-//                         </div>
-
-//                         <button
-//                             type="submit"
-//                             disabled={loading}
-//                             className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-//                         >
-//                             {loading ? "Creating..." : "Create Project"}
-//                         </button>
-//                     </form>
-
-//                     {/* Project Templates */}
-//                     <div className="border-l pl-6 border-gray-200">
-//                         <h3 className="text-sm font-medium text-gray-700 mb-4">
-//                             Quick Templates
-//                         </h3>
-//                         <div className="space-y-4">
-//                             {projectTemplates.map((template) => (
-//                                 <div
-//                                     key={template.name}
-//                                     className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer group"
-//                                 >
-//                                     <div className="flex items-center space-x-4">
-//                                         {template.icon}
-//                                         <div>
-//                                             <p className="font-medium text-gray-800">{template.name}</p>
-//                                             <p className="text-sm text-gray-500">{template.description}</p>
-//                                         </div>
-//                                     </div>
-//                                     <ChevronRight className="text-gray-400 group-hover:translate-x-1 transition-transform" />
-//                                 </div>
-//                             ))}
-//                         </div>
-//                     </div>
-//                 </div>
-//             </div>
-//         </div>
-//     );
-// };
 
 const HeaderFragment = () => {
     const [loading, setLoading] = useState(false);
     const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
+    const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
+    const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
     const { state, dispatch } = useStateValue();
     const authContext = useContext(AuthContext);
 
@@ -214,28 +35,122 @@ const HeaderFragment = () => {
         }
     }, [authContext?.token, dispatch]);
 
+    // Function to get user initials
+    const getUserInitials = (name: string) => {
+        if (!name) return '?';
+        const names = name.split(' ');
+        return names.length > 1
+            ? (names[0][0] + names[1][0]).toUpperCase()
+            : names[0][0].toUpperCase();
+    };
+
+    const handleLogout = () => {
+        // Implement logout logic
+        authContext?.handleLogout();
+    };
+
+    const handleSettings = () => {
+        // Navigate to settings page or open settings modal
+        // Replace with your actual navigation/modal logic
+        console.log('Open settings');
+    };
+
     return (
         <>
-            <div className="flex justify-between items-center p-4 border-b border-gray-200">
-                <div className="flex items-center space-x-3">
-                    <h1 className="text-xl font-medium font-syne text-gray-800">
-                        {state.currentProject?.name || "Schema Design Assistant"}
-                    </h1>
-                    {loading && (
-                        <span className="text-sm text-gray-500 animate-pulse">
-                            Loading...
-                        </span>
-                    )}
-                </div>
+            <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-200">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex justify-between items-center py-4 space-x-4">
+                        {/* Project Title and Loading State */}
+                        <div className="flex items-center space-x-3 min-w-0">
+                            <div className="relative">
+                                <button
+                                    onClick={() => setIsProjectDropdownOpen(!isProjectDropdownOpen)}
+                                    className="flex items-center space-x-2 text-gray-900 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
+                                >
+                                    <h1 className="text-xl font-medium font-syne truncate max-w-[200px]">
+                                        {state.currentProject?.name || "Schema Design Assistant"}
+                                    </h1>
+                                    <ChevronDownIcon className="w-4 h-4 text-gray-500" />
+                                </button>
 
-                <div className="flex items-center space-x-4">
-                    <button
-                        onClick={() => setIsNewProjectOpen(true)}
-                        className="flex items-center gap-2 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
-                    >
-                        <PlusIcon className="w-5 h-5" />
-                        New Project
-                    </button>
+                                {isProjectDropdownOpen && (
+                                    <div className="absolute left-0 mt-2 w-56 origin-top-left bg-white divide-y divide-gray-100 rounded-lg shadow-lg ring-1 ring-black/5 focus:outline-none">
+                                        <div className="px-1 py-1">
+                                            {state.projects.map((project) => (
+                                                <button
+                                                    key={project._id}
+                                                    onClick={() => {
+                                                        dispatch({ type: "SET_CURRENT_PROJECT", payload: project });
+                                                        setIsProjectDropdownOpen(false);
+                                                    }}
+                                                    className="group flex w-full items-center rounded-md px-2 py-2 text-sm hover:bg-gray-100"
+                                                >
+                                                    {project.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {loading && (
+                                <span className="text-sm text-gray-500 animate-pulse">
+                                    Loading...
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center space-x-4">
+                            {/* New Project Button */}
+                            <button
+                                onClick={() => setIsNewProjectOpen(true)}
+                                className="flex items-center gap-2 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
+                            >
+                                <PlusIcon className="w-5 h-5" />
+                                <span className="hidden sm:inline">New Project</span>
+                            </button>
+
+                            {/* User Profile */}
+                            <div className="relative">
+                                <button
+                                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                                    className="relative flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold hover:opacity-90 transition-all"
+                                >
+                                    {getUserInitials(authContext?.user?.firstName + " " + authContext?.user?.lastName || '')}
+                                </button>
+
+                                {isUserMenuOpen && (
+                                    <div className="absolute right-0 mt-2 w-56 origin-top-right bg-white divide-y divide-gray-100 rounded-lg shadow-lg ring-1 ring-black/5 focus:outline-none">
+                                        <div className="px-4 py-3 border-b border-gray-100">
+                                            <p className="text-sm font-medium text-gray-900 truncate">
+                                                {authContext?.user?.firstName + " " + authContext?.user?.lastName}
+                                            </p>
+                                            <p className="text-xs text-gray-500 truncate">
+                                                {authContext?.user?.email}
+                                            </p>
+                                        </div>
+                                        <div className="px-1 py-1">
+                                            <button
+                                                onClick={handleSettings}
+                                                className="group flex w-full items-center rounded-md px-2 py-2 text-sm hover:bg-gray-100"
+                                            >
+                                                <SettingsIcon className="mr-2 w-4 h-4 text-gray-500" />
+                                                Settings
+                                            </button>
+                                            <button
+                                                onClick={handleLogout}
+                                                className="group flex w-full items-center rounded-md px-2 py-2 text-sm hover:bg-gray-100 hover:text-red-600"
+                                            >
+                                                <LogOutIcon className="mr-2 w-4 h-4 text-gray-500" />
+                                                Logout
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
