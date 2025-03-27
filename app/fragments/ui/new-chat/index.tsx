@@ -8,7 +8,9 @@ import {
   Layers, 
   ChevronRight, 
   Server, 
-  Columns 
+  Columns, 
+  BetweenHorizonalEnd,
+  DatabaseZap
 } from "lucide-react";
 import { useStateValue } from "@/global/state.provider";
 import { AuthContext } from "@/context/auth.context";
@@ -38,19 +40,19 @@ const NewProjectModal = ({ isOpen, onClose }: {
     const projectTemplates = [
         {
             name: "E-commerce",
-            icon: <Server className="text-indigo-500 w-6 h-6" />,
+            icon: <DatabaseZap className="text-indigo-500 w-6 h-6" />,
             description: "Comprehensive online retail schema",
             schemaType: "sql"
         },
         {
             name: "User Management",
-            icon: <FileText className="text-emerald-500 w-6 h-6" />,
+            icon: <Server className="text-emerald-500 w-6 h-6" />,
             description: "Scalable authentication system",
             schemaType: "nosql"
         },
         {
             name: "Product Catalog",
-            icon: <Columns className="text-orange-500 w-6 h-6" />,
+            icon: <BetweenHorizonalEnd className="text-orange-500 w-6 h-6" />,
             description: "Flexible product information model",
             schemaType: "nosql"
         }
@@ -95,9 +97,9 @@ const NewProjectModal = ({ isOpen, onClose }: {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-            <div className="bg-white w-[95%] max-w-4xl rounded-2xl shadow-2xl p-8">
+            <div className="bg-white w-[95%] max-w-4xl rounded-2xl shadow-2xl p-8 border border-gray-300">
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-medium text-gray-800 flex items-center">
+                    <h2 className="text-2xl font-medium font-syne text-gray-800 flex items-center">
                         <FolderPlus className="mr-3 text-gray-800" />
                         Create New Project
                     </h2>
