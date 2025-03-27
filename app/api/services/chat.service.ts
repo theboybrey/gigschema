@@ -19,7 +19,7 @@ export async function CreateChat(
 
   try {
     const response = await Axios({
-      url: "/chat/",
+      url: "/chat",
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -50,7 +50,7 @@ export async function GetChats(
 
   try {
     const response = await Axios({
-      url: "/chat/",
+      url: "/chat",
       method: "GET",
       headers: {
         "Content-Type": "application/json",

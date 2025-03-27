@@ -1,7 +1,8 @@
-import { FetchUser } from "@/hooks";
+import { FetchUser, FetchToken } from "@/hooks";
 import { AppState, IUser } from "@/interface";
 
 let user: IUser | null = FetchUser();
+let token: string | null = FetchToken();
 
 const initialState: AppState = {
   user: user,
@@ -17,6 +18,7 @@ const initialState: AppState = {
   currentSchemaValues: [],
   isLoading: false,
   error: null,
+  token: token,
 };
 
 export default initialState;

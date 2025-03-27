@@ -23,7 +23,7 @@ export async function CreateProject(
 
   try {
     const response = await Axios({
-      url: "/project/",
+      url: "/project",
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -88,7 +88,7 @@ export async function GetProjects(
 
   try {
     const response = await Axios({
-      url: "/project/",
+      url: "/project",
       method: "GET",
       headers: {
         "Content-Type": "application/json",

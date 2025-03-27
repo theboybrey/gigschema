@@ -104,6 +104,7 @@ export interface AppState {
   currentSchemaValues: any[];
   isLoading: boolean;
   error: IError | null;
+  token: string | null;
 }
 
 export interface ActionType {

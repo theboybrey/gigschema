@@ -86,11 +86,15 @@ const LoginFragment = () => {
         password: data.password.trim()
       }, setLoading, async (responseData: LoginResponse) => {
         if (responseData && responseData.user) {
-          setAuthState(responseData.user);
+          setAuthState(responseData.user, responseData.token);
           dispatch({
             type: 'SET_USER',
             payload: responseData.user
           });
+          dispatch({
+            type: 'SET_TOKEN',
+            payload: responseData.token
+          })
           // Small delay to ensure state is set
           await new Promise(resolve => setTimeout(resolve, 100));
           router.replace("/");
@@ -240,7 +244,7 @@ const LoginFragment = () => {
         <Card className='mt-4 rounded-full shadow-lg p-0 border border-gray-300 '>
           <div className="p-0">
             <button
-              onClick={() => { 
+              onClick={() => {
                 notifier.info('Feature not implemented yet', 'Coming Soon')
               }}
               className="w-full flex items-center justify-center gap-3 py-3 px-4 
