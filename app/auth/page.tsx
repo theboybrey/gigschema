@@ -7,7 +7,12 @@ type Props = {
     children: React.ReactNode
 }
 
+
 const AuthenticatorFragment = ({ children }: Props) => {
+
+
+
+
     return (
         <AuthProvider>
             <AuthorizeResourceHeaders>
