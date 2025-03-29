@@ -5,7 +5,10 @@ import React, { useEffect, useRef, useState } from 'react'
 import { FaDatabase } from "react-icons/fa"
 import { SiMongodb } from "react-icons/si"
 import { BsCodeSlash } from "react-icons/bs"
-import { FiChevronDown, FiChevronUp, FiCopy } from "react-icons/fi"
+import { FiChevronDown, FiChevronUp, FiCopy, FiMaximize } from "react-icons/fi"
+import { AnimatePresence, motion } from 'framer-motion'
+import { notifier } from '@/components/notifier'
+import { Button } from '@/components/button'
 
 type MessageType = {
     id: string;
@@ -16,7 +19,131 @@ type MessageType = {
         type: 'sql' | 'nosql';
         data: any;
     }
+    artifacts?: Array<{
+        id: string
+        title: string
+        content: string
+        type: 'text' | 'code' | 'json' | 'sql' | 'nosql'
+        language?: string
+    }>
 }
+
+const ArtifactModal = ({
+    artifact,
+    isOpen,
+    onClose,
+    onSave
+}: {
+    artifact: NonNullable<MessageType['artifacts']>[0],
+    isOpen: boolean,
+    onClose: () => void,
+    onSave: (id: string, content: string) => void
+}) => {
+    const [editableContent, setEditableContent] = useState(artifact.content);
+    const modalRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setEditableContent(artifact.content);
+    }, [artifact.content]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isOpen, onClose]);
+
+    const handleSave = () => {
+        onSave(artifact.id, editableContent);
+        onClose();
+    };
+
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                >
+                    <motion.div
+                        initial={{ scale: 0.9, y: 20 }}
+                        animate={{ scale: 1, y: 0 }}
+                        exit={{ scale: 0.9, y: 20 }}
+                        ref={modalRef}
+                        className="bg-white rounded-lg shadow-xl mono font-mono  max-w-4xl w-full max-h-[90vh] flex flex-col"
+                    >
+                        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                            <div className="flex items-center">
+                                {artifact.type === 'code' && <BsCodeSlash className="mr-2 text-gray-700" />}
+                                {artifact.type === 'json' && <FaDatabase className="mr-2 text-purple-500" />}
+                                {artifact.type === 'text' && (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                )}
+                                <h3 className="font-normal text-gray-600">{artifact.title}</h3>
+                                {artifact.language && (
+                                    <span className="ml-2 px-2 py-1 text-xs bg-gray-100 rounded-full capitalize">
+                                        {artifact.language}
+                                    </span>
+                                )}
+                            </div>
+                            <button
+                                onClick={onClose}
+                                className="text-gray-500 hover:text-gray-700"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div className="flex-grow overflow-auto p-4">
+                            <textarea
+                                value={editableContent}
+                                onChange={(e) => setEditableContent(e.target.value)}
+                                className="w-full h-full min-h-[400px] font-mono mono text-sm text-gray-600 p-4 resize-none bg-zinc-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-gray-300 focus:border-transparent"
+                                spellCheck={false}
+                            />
+                        </div>
+                        <div className="px-6 py-4 border-t border-gray-200 flex gap-2 justify-between items-center">
+                            <p className='w-full'>
+                                <span className="text-xs text-gray-500 font-syne">Press <span className="font-semibold mono p-1 rounded-lg border border-gray-300 bg-gray-100">Ctrl</span> + <span className="font-semibold mono p-1 rounded-lg border border-gray-300 bg-gray-100">Enter</span> to save changes</span>
+                            </p>
+
+                            <div className="w-full items-center flex justify-end gap-2">
+                                <Button
+                                    variant='destructive'
+                                    onClick={onClose}
+                                    className="px-4 py-2 border rounded-lg font-normal text-sm font-sans hover:bg-opacity-95"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={handleSave}
+                                    className="px-4 py-2 bg-blue-500 text-sm text-white rounded-md hover:bg-blue-600 font-syne"
+                                >
+                                    Save
+                                </Button>
+                            </div>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
+};
+
 
 const EntityTable = ({ data, schemaType }: { data: any, schemaType: 'sql' | 'nosql' }) => {
     const [isExpanded, setIsExpanded] = useState(true);
@@ -100,6 +227,86 @@ const EntityTable = ({ data, schemaType }: { data: any, schemaType: 'sql' | 'nos
     );
 };
 
+
+const Artifact = ({
+    artifact,
+    onView
+}: {
+    artifact: NonNullable<MessageType['artifacts']>[0],
+    onView: (artifact: NonNullable<MessageType['artifacts']>[0]) => void
+}) => {
+    const getIcon = () => {
+        switch (artifact.type) {
+            case 'code':
+                return <BsCodeSlash className="text-gray-600 font-medium" />;
+            case 'json':
+                return <FaDatabase className="text-green-500 font-medium" />;
+            default:
+                return (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                );
+        }
+    };
+
+    const [isCopied, setIsCopied] = useState(false);
+
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(artifact.content);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden my-3 shadow-sm"
+        >
+            <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
+                <div className="flex items-center">
+                    {getIcon()}
+                    <h3 className="font-medium text-xs capitalize ml-2 text-gray-700">{artifact.title}</h3>
+                    {artifact.language && (
+                        <span className="ml-2 px-2 py-0.5 text-xs bg-gray-100 rounded-full text-gray-600">
+                            {artifact.language}
+                        </span>
+                    )}
+                </div>
+
+                <div className="flex items-center space-x-1">
+                    <button
+                        onClick={copyToClipboard}
+                        className="text-gray-500 hover:text-gray-600 p-1 rounded-md hover:bg-gray-200 transition-colors flex items-center text-xs"
+                    >
+                        <FiCopy size={14} className="mr-1" />
+                        {isCopied ? 'Copied!' : 'Copy'}
+                    </button>
+                    <button
+                        onClick={() => onView(artifact)}
+                        className="text-gray-500 hover:text-gray-600 p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+                        title="View/Edit content"
+                    >
+                        <FiMaximize size={16} />
+                    </button>
+                </div>
+            </div>
+            <div className="p-4 max-h-20 overflow-hidden relative bg-gray-50">
+                <div className="text-xs mono font-mono text-gray-600 whitespace-pre-wrap line-clamp-3">
+                    {artifact.content.slice(0, 150)}
+                    {artifact.content.length > 150 && '...'}
+                </div>
+                {artifact.content.length > 150 && (
+                    <div className="absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-gray-50 to-transparent"></div>
+                )}
+            </div>
+        </motion.div>
+    );
+};
+
+
 const CodeArtifact = ({ code, language }: { code: string, language: string }) => {
     const [isCopied, setIsCopied] = useState(false);
 
@@ -114,7 +321,7 @@ const CodeArtifact = ({ code, language }: { code: string, language: string }) =>
             <div className="flex items-center justify-between px-4 py-2 bg-gray-100 border-b border-gray-200">
                 <div className="flex items-center">
                     <BsCodeSlash className="mr-2 text-gray-700" />
-                    <span className="text-xs font-medium text-gray-700">{language || 'Code'}</span>
+                    <span className="text-xs font-medium capitalize text-gray-700">{language || 'Code'}</span>
                 </div>
                 <button
                     onClick={copyToClipboard}
@@ -182,65 +389,182 @@ const DocumentPreview = ({ content, title, onRemove }: { content: string, title:
 };
 
 const MessageComponent = ({ message }: { message: MessageType }) => {
+    const [selectedArtifact, setSelectedArtifact] = useState<NonNullable<MessageType['artifacts']>[0] | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    function handleViewArtifact(artifact: NonNullable<MessageType['artifacts']>[0]) {
+        setSelectedArtifact(artifact);
+        setIsModalOpen(true);
+    }
+
+    function handleSaveArtifact(id: string, content: string) {
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 5;
+
+            notifier.progress(`Uploading ${selectedArtifact?.title}...`, progress);
+
+            if (progress >= 100) {
+                clearInterval(interval);
+                notifier.success(`${selectedArtifact?.title} successfuly saved.`, "Successfully uploaded");
+            }
+        }, 150);
+
+        if (selectedArtifact) {
+            setSelectedArtifact(prev => prev ? { ...prev, content } : null);
+        }
+    }
+
+    function detectCode(content: string) {
+        const parts = []
+        const codeRegex = /```(.*?)\n([\s\S]*?)```/g
+        let lastIndex = 0
+        let match
+
+        while ((match = codeRegex.exec(content)) !== null) {
+            if (match.index > lastIndex) {
+                parts.push({
+                    type: 'text',
+                    content: content.slice(lastIndex, match.index)
+                });
+            }
+
+            parts.push({
+                type: 'code',
+                language: match[1] || 'plaintext',
+                content: match[2]
+            });
+
+            lastIndex = match.index + match[0].length;
+        }
+
+        if (lastIndex < content.length) {
+            parts.push({
+                type: 'text',
+                content: content.slice(lastIndex)
+            });
+        }
+
+        return parts;
+    }
+
+    const contentParts = detectCode(message.content);
+
     return (
-        <div className={cx(
-            "py-6 flex flex-col",
-            message.sender === 'user' ? "bg-white" : "bg-gray-50"
-        )}>
-            <div className="max-w-3xl mx-auto w-full px-4 sm:px-6">
-                <div className="flex items-start">
+        <>
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className={cx(
+                    "py-4 px-4",
+                    message.sender === 'user' ? "bg-white" : "bg-white"
+                )}
+            >
+                <div className="max-w-3xl mx-auto">
                     <div className={cx(
-                        "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mr-3 mt-1",
-                        message.sender === 'user' ? "bg-gray-200" : "bg-emerald-100"
+                        "flex",
+                        message.sender === 'user' ? "justify-end" : "justify-start"
                     )}>
-                        {message.sender === 'user' ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-600">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                            </svg>
-                        ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-emerald-600">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
-                            </svg>
-                        )}
-                    </div>
+                        <div className={cx(
+                            "max-w-[80%]",
+                            message.sender === 'user' ? "order-1" : "order-2"
+                        )}>
+                            <div className={cx(
+                                "rounded-2xl p-4 mb-1 relative",
+                                message.sender === 'user'
+                                    ? "bg-[#E8E8E8] text-[#212a20]/90 text-sm rounded-br-none"
+                                    : "bg-white border border-[#212a20]/10 text-sm rounded-bl-none"
+                            )}>
+                                <div className="prose prose-sm max-w-none">
+                                    {contentParts.map((part, index) => {
+                                        if (part.type === 'text') {
+                                            return <p key={index} className="m-0">{part.content}</p>;
+                                        } else {
 
-                    <div className="flex-grow">
-                        <div className="text-sm font-medium text-gray-700 mb-1">
-                            {message.sender === 'user' ? 'You' : 'AI Assistant'}
-                        </div>
-
-                        {message.schema && (
-                            <div className="mb-4">
-                                <EntityTable data={message.schema.data} schemaType={message.schema.type} />
+                                            return null;
+                                        }
+                                    })}
+                                </div>
                             </div>
-                        )}
 
-                        <div className="prose prose-sm max-w-none">
-                            {message.content.split('```').map((part, index) => {
-                                if (index % 2 === 0) {
-                                    return <p key={index}>{part}</p>;
-                                } else {
-                                    const [language, ...codeParts] = part.split('\n');
-                                    const code = codeParts.join('\n');
-                                    return <CodeArtifact key={index} code={code} language={language} />;
-                                }
-                            })}
+                            {/* Render code artifacts below the message bubble */}
+                            {contentParts.some(part => part.type === 'code') && (
+                                <div className="mt-2 space-y-2">
+                                    {contentParts
+                                        .filter(part => part.type === 'code')
+                                        .map((part, index) => (
+                                            <CodeArtifact
+                                                key={index}
+                                                code={part.content}
+                                                language={part.language ?? 'plaintext'}
+                                            />
+                                        ))
+                                    }
+                                </div>
+                            )}
+
+                            {message.schema && (
+                                <div className="my-2">
+                                    <EntityTable data={message.schema.data} schemaType={message.schema.type} />
+                                </div>
+                            )}
+
+                            {message.artifacts && message.artifacts.length > 0 && (
+                                <div className="my-2">
+                                    {message.artifacts.map((artifact) => (
+                                        <Artifact
+                                            key={artifact.id}
+                                            artifact={artifact}
+                                            onView={handleViewArtifact}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className={cx(
+                                "flex items-center text-xs text-gray-500 mt-1",
+                                message.sender === 'user' ? "justify-end" : "justify-start"
+                            )}>
+                                {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
                         </div>
 
-                        <div className="mt-2 text-xs text-gray-500">
-                            {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <div className={cx(
+                            "w-8 h-8 rounded-full flex items-center justify-center self-end mb-1",
+                            message.sender === 'user'
+                                ? "order-2 ml-2 bg-[#212a20]"
+                                : "order-1 mr-2 bg-slate-100"
+                        )}>
+                            {message.sender === 'user' ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-[#e8e8e8]">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                                </svg>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-[#212a20]">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
+                                </svg>
+                            )}
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </motion.div>
+            {selectedArtifact && (
+                <ArtifactModal
+                    artifact={selectedArtifact}
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    onSave={handleSaveArtifact}
+                />
+            )}
+        </>
     );
 };
-
 const generateAIResponse = (message: string, schemaType: 'sql' | 'nosql'): MessageType => {
     const lowerMessage = message.toLowerCase();
     let aiContent = "I'm not sure how to respond to that.";
     let schemaData = null;
+    let artifacts = null;
 
     if (lowerMessage.includes('select') && lowerMessage.includes('from')) {
         aiContent = "I've executed your SQL query and here are the results:";
@@ -259,6 +583,16 @@ const generateAIResponse = (message: string, schemaType: 'sql' | 'nosql'): Messa
     }
     else if (lowerMessage.includes('code') || lowerMessage.includes('function') || lowerMessage.includes('javascript')) {
         aiContent = "Here's a simple JavaScript function that might help:\n\n```javascript\nfunction processData(data) {\n  return data.map(item => {\n    return {\n      ...item,\n      processed: true,\n      timestamp: new Date()\n    };\n  });\n}\n```\n\nYou can use this function to process your data arrays.";
+    } else if (lowerMessage.includes('paste') && lowerMessage.length > 500) {
+        aiContent = "I've analyzed your pasted content:";
+        artifacts = [
+            {
+                id: Date.now().toString(),
+                title: "Pasted Content",
+                content: message,
+                type: 'text'
+            }
+        ];
     }
     else {
         const responses = [
@@ -278,7 +612,47 @@ const generateAIResponse = (message: string, schemaType: 'sql' | 'nosql'): Messa
         schema: schemaData ? {
             type: schemaType,
             data: schemaData
-        } : undefined
+        } : undefined,
+        artifacts: artifacts?.map(artifact => ({
+            ...artifact,
+            type: artifact.type as 'text' | 'code' | 'json'
+        })) || undefined
+    };
+};
+
+const processLargeContent = (content: string): NonNullable<MessageType['artifacts']>[0] | null => {
+    if (!content || content.length < 500) return null;
+
+    let type: 'text' | 'code' | 'json' = 'text';
+    let language: string | undefined = undefined;
+
+
+    try {
+        JSON.parse(content);
+        type = 'json';
+    } catch (e) {
+
+        if (content.includes('function') || content.includes('class') || content.includes('import ') ||
+            content.includes('const ') || content.includes('let ') || content.includes('var ')) {
+            type = 'code';
+
+
+            if (content.includes('function') || content.includes('const') || content.includes('let')) {
+                language = 'javascript';
+            } else if (content.includes('import ') && content.includes('from ')) {
+                language = 'typescript';
+            } else if (content.includes('def ') || content.includes('import ') && content.includes('print(')) {
+                language = 'python';
+            }
+        }
+    }
+
+    return {
+        id: Date.now().toString(),
+        title: type === 'json' ? 'JSON Data' : (type === 'code' ? `${language || 'Code'} Snippet` : 'Text Content'),
+        content: content,
+        type: type,
+        language: language
     };
 };
 
@@ -292,6 +666,8 @@ const TextAreaFragment = () => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [selectedDocuments, setSelectedDocuments] = useState<Array<{ id: string, title: string, content: string }>>([]);
 
     const placeholderTemplates: Array<string> = [
         'What\'s on your mind, ' + (user?.firstName || 'there') + '?',
@@ -312,25 +688,45 @@ const TextAreaFragment = () => {
         scrollToBottom();
     }, [messages]);
 
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        Array.from(files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                if (event.target && typeof event.target.result === 'string') {
+                    setSelectedDocuments(prev => [
+                        ...prev,
+                        {
+                            id: Date.now().toString() + file.name,
+                            title: file.name,
+                            content: event.target?.result as string
+                        }
+                    ]);
+                }
+            };
+            reader.readAsText(file);
+        });
+
+
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
     const adjustTextareaHeight = () => {
         const textarea = textareaRef.current;
         if (!textarea) return;
 
         const scrollPos = textarea.scrollTop;
-
         textarea.style.height = 'auto';
-
         const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight) || 20;
-
         const textRows = Math.max(1, Math.ceil(textarea.scrollHeight / lineHeight));
-
         const visibleRows = Math.min(textRows, 10);
-
         const newHeight = visibleRows * lineHeight;
         textarea.style.height = `${newHeight}px`;
-
         textarea.style.overflowY = textRows > 10 ? 'auto' : 'hidden';
-
         textarea.scrollTop = scrollPos;
     };
 
@@ -349,6 +745,10 @@ const TextAreaFragment = () => {
         setMessage(e.target.value);
     };
 
+    const removeDocument = (id: string) => {
+        setSelectedDocuments(prev => prev.filter(doc => doc.id !== id));
+    }
+
     const handleSubmit = () => {
         if (message.trim() && !isLoading) {
             setIsLoading(true);
@@ -360,7 +760,43 @@ const TextAreaFragment = () => {
                 timestamp: new Date(),
             };
 
+            if (message.length > 500) {
+                const artifact = processLargeContent(message);
+                if (artifact) {
+                    userMessage.content = "I've shared some content for you to analyze.";
+                    userMessage.artifacts = [artifact];
+                }
+            }
+
+
+            if (selectedDocuments.length > 0) {
+                const documentArtifacts = selectedDocuments.map(doc => {
+
+                    const processed = processLargeContent(doc.content);
+                    return {
+                        id: doc.id,
+                        title: doc.title,
+                        content: doc.content,
+                        type: processed?.type || 'text',
+                        language: processed?.language
+                    };
+                });
+
+                if (documentArtifacts.length > 0) {
+                    if (!userMessage.artifacts) {
+                        userMessage.artifacts = [];
+                    }
+                    userMessage.artifacts = [...userMessage.artifacts, ...documentArtifacts];
+
+
+                    if (!message.trim()) {
+                        userMessage.content = `I've shared ${documentArtifacts.length} document${documentArtifacts.length > 1 ? 's' : ''} for your review.`;
+                    }
+                }
+            }
+
             setMessages(prev => [...prev, userMessage]);
+
 
             setTimeout(() => {
                 const aiResponse = generateAIResponse(message, schemaType);
@@ -369,6 +805,7 @@ const TextAreaFragment = () => {
                 setMessage('');
                 setIsLoading(false);
                 setPastedContent(null);
+                setSelectedDocuments([]);
 
                 setTimeout(() => {
                     if (textareaRef.current) {
@@ -395,6 +832,7 @@ const TextAreaFragment = () => {
         setPastedContent(null);
     };
 
+
     return (
         <>
             {/* Message Thread */}
@@ -419,7 +857,7 @@ const TextAreaFragment = () => {
 
             {/* Input Area - Fixed at Bottom */}
             <div
-                className="fixed bottom-4 border hover:shadow-sm backdrop-blur-sm border-gray-200 w-full max-w-3xl z-10 left-1/2 transform -translate-x-1/2 rounded-xl mx-auto px-4 py-3"
+                className="fixed bottom-4 border hover:shadow-sm bg-white border-gray-200 w-full max-w-3xl z-10 left-1/2 transform -translate-x-1/2 rounded-xl mx-auto px-4 py-3"
             >
                 <div className="flex flex-col">
                     {/* Pasted Content Preview */}
@@ -429,6 +867,19 @@ const TextAreaFragment = () => {
                             title="Pasted Content"
                             onRemove={removePastedContent}
                         />
+                    )}
+
+                    {selectedDocuments.length > 0 && (
+                        <div className="mb-2 space-y-2">
+                            {selectedDocuments.map((doc) => (
+                                <DocumentPreview
+                                    key={doc.id}
+                                    content={doc.content}
+                                    title={doc.title}
+                                    onRemove={() => removeDocument(doc.id)}
+                                />
+                            ))}
+                        </div>
                     )}
 
                     {/* Textarea */}
@@ -460,12 +911,29 @@ const TextAreaFragment = () => {
                     {/* Controls */}
                     <div className="flex items-center justify-between mt-2 h-8">
                         <div className="text-xs text-gray-500 gap-2 flex ">
-                            <span className={'px-2 py-1 text-xs mono rounded-lg bg-zinc-100'}> Enter + Shift</span>
-                            <span className={'px-2 py-1 text-xs mono rounded-lg bg-zinc-100'}> Enter</span>
+                            <span className={'px-2 py-1 text-xs mono rounded-lg bg-zinc-100 border border-gray-00'}> Enter + Shift</span>
+                            <span className={'px-2 py-1 text-xs mono rounded-lg bg-zinc-100 border border-gray-300'}> Enter</span>
                         </div>
 
                         <div className="flex items-center space-x-2">
-                            {/* Change Placeholder Button */}
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="flex items-center justify-center p-2 border border-dotted rounded-full hover:bg-gray-100 transition-colors"
+                                title="Change placeholder"
+                                style={{ flexShrink: 0, width: '32px', height: '32px' }}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" />
+                                </svg>
+                            </button>
+                            <input
+                                type="file"
+                                accept=".txt,.json,.csv,.js,.ts,.py,.java"
+                                ref={fileInputRef}
+                                onChange={handleFileUpload}
+                                className="hidden"
+                            />
+
                             <button
                                 onClick={() => setPlaceholder(placeholderTemplates[Math.floor(Math.random() * placeholderTemplates.length)])}
                                 className="flex items-center justify-center p-2 border border-dotted rounded-full hover:bg-gray-100 transition-colors"

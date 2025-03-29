@@ -17,3 +17,5 @@ const SchemaAssistant = (props: Props) => {
 }
 
 export default SchemaAssistant
+
+
