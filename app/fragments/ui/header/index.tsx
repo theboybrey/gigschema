@@ -2,13 +2,12 @@ import { GetChats } from "@/app/api/services/chat.service";
 import { GetProjects } from "@/app/api/services/project.service";
 import { AuthContext } from "@/context/auth.context";
 import { useStateValue } from "@/global/state.provider";
-import { RiBarcodeBoxLine, RiLoader5Fill } from "@remixicon/react";
+import { RiAlertLine, RiBarcodeBoxLine, RiLoader5Fill } from "@remixicon/react";
 import { ChevronDownIcon, LogOutIcon, PlusIcon, SettingsIcon } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { ChatHistoryModal, SettingsModal } from "../modals";
 import NewProjectModal from "../new-chat";
 import { IProject } from "@/interface";
-import { routeros } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { useRouter } from "next/navigation";
 
 const HeaderFragment = () => {
@@ -101,7 +100,7 @@ const HeaderFragment = () => {
                                         ) :
                                         (
                                             <span className="text-sm text-gray-500">
-                                                <RiBarcodeBoxLine className="w-4 h-4 inline-block" />
+                                                <RiAlertLine className="w-4 h-4 inline-block" />
                                             </span>
                                         )
 
@@ -119,7 +118,8 @@ const HeaderFragment = () => {
                                                     key={project._id}
                                                     onClick={() => {
                                                         dispatch({ type: "SET_CURRENT_PROJECT", payload: project });
-                                                        router.push(`/?${project._id}&zipper=${project.visibility ? project.visibility : 'private'}`);
+                                                        dispatch({ type: 'SET_CURRENT_CONVERSATION', payload: project.messages || [] });
+                                                        router.push(`/?project=${project._id}&zipper=${project.visibility ? project.visibility : 'private'}`);
                                                         setIsProjectDropdownOpen(false);
                                                     }}
                                                     className={`group flex w-full items-center rounded-md px-3 py-2 text-sm hover:bg-gray-100 ${state.currentProject?._id === project._id

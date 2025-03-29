@@ -10,6 +10,11 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { notifier } from '@/components/notifier'
 import { Button } from '@/components/button'
 
+import { GetChats, GetChat, CreateChat } from '@/app/api/services/chat.service'
+import { GetProject, ContinueConversation } from '@/app/api/services/project.service'
+import { usePathname, useSearchParams } from 'next/navigation'
+import LoaderFragment from '../loader'
+
 type MessageType = {
     id: string;
     content: string;
@@ -623,62 +628,191 @@ const generateAIResponse = (message: string, schemaType: 'sql' | 'nosql'): Messa
 const processLargeContent = (content: string): NonNullable<MessageType['artifacts']>[0] | null => {
     if (!content || content.length < 500) return null;
 
-    let type: 'text' | 'code' | 'json' = 'text';
+    let type: 'text' | 'code' | 'json' | 'sql' | 'nosql' = 'text';
     let language: string | undefined = undefined;
-
 
     try {
         JSON.parse(content);
         type = 'json';
     } catch (e) {
-
-        if (content.includes('function') || content.includes('class') || content.includes('import ') ||
-            content.includes('const ') || content.includes('let ') || content.includes('var ')) {
+        if (
+            content.includes('function') ||
+            content.includes('class') ||
+            content.includes('import ') ||
+            content.includes('const ') ||
+            content.includes('let ') ||
+            content.includes('var ')
+        ) {
             type = 'code';
-
-
             if (content.includes('function') || content.includes('const') || content.includes('let')) {
                 language = 'javascript';
             } else if (content.includes('import ') && content.includes('from ')) {
                 language = 'typescript';
-            } else if (content.includes('def ') || content.includes('import ') && content.includes('print(')) {
+            } else if (content.includes('def ') || content.includes('print(')) {
                 language = 'python';
+            } else if (content.includes('class ') && content.includes('public ')) {
+                language = 'java';
             }
+        } else if (content.includes('CREATE TABLE') || content.includes('SELECT ') || content.includes('INSERT INTO')) {
+            type = 'sql';
+            language = 'sql';
         }
     }
 
     return {
         id: Date.now().toString(),
-        title: type === 'json' ? 'JSON Data' : (type === 'code' ? `${language || 'Code'} Snippet` : 'Text Content'),
-        content: content,
-        type: type,
-        language: language
+        title: type === 'json' ? 'JSON Data' : (type === 'code' ? `${language || 'Code'} Snippet` : type === 'sql' ? 'SQL Schema' : 'Large Text'),
+        content,
+        type,
+        language,
     };
 };
 
 const TextAreaFragment = () => {
-    const { state: { user }, dispatch } = useStateValue();
-    const [message, setMessage] = React.useState<string>('');
-    const [isLoading, setIsLoading] = React.useState<boolean>(false);
-    const [schemaType, setSchemaType] = React.useState<'sql' | 'nosql'>('sql');
-    const [messages, setMessages] = React.useState<MessageType[]>([]);
-    const [pastedContent, setPastedContent] = React.useState<string | null>(null);
+    const { state: { user, currentConversation, currentProject }, dispatch } = useStateValue();
+    const [message, setMessage] = useState<string>('');
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [schemaType, setSchemaType] = useState<'sql' | 'nosql'>(currentProject?.schemaType || 'sql');
+    const [messages, setMessages] = useState<MessageType[]>([]);
+    const [selectedDocuments, setSelectedDocuments] = useState<Array<{ id: string, title: string, content: string }>>([]);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [selectedDocuments, setSelectedDocuments] = useState<Array<{ id: string, title: string, content: string }>>([]);
+    const token = localStorage.getItem('token') || '';
+
+    const mapToMessageType = (msg: any): MessageType => {
+        let schema: MessageType['schema'] = undefined;
+        let artifacts: MessageType['artifacts'] = [];
+        let cleanedContent = msg.content || '';
+
+        if (msg.content) {
+            const codeRegex = /```(.*?)\n([\s\S]*?)\n```/g;
+            let match;
+            let lastIndex = 0;
+            const contentParts: string[] = [];
+
+            while ((match = codeRegex.exec(msg.content)) !== null) {
+                if (match.index > lastIndex) {
+                    contentParts.push(msg.content.slice(lastIndex, match.index));
+                }
+
+                const language = match[1].trim() || 'plaintext';
+                const codeContent = match[2].trim();
+
+                if (language === 'json') {
+                    try {
+                        const jsonData = JSON.parse(codeContent);
+                        if (typeof jsonData === 'object' && !Array.isArray(jsonData) && jsonData !== null) {
+                            const isSchema = Object.values(jsonData).some((val: any) =>
+                                typeof val === 'object' && (val.type || val.ref || Object.values(val).some(v => typeof v === 'string'))
+                            );
+                            if (isSchema) {
+                                schema = {
+                                    type: 'nosql',
+                                    data: Object.entries(jsonData).map(([collection, fields]) => ({
+                                        collection,
+                                        ...(typeof fields === 'object' && fields !== null ? fields : {}),
+                                    })),
+                                };
+                            } else {
+                                artifacts.push({
+                                    id: `${msg._id || Date.now()}-${artifacts.length}`,
+                                    title: 'JSON Data',
+                                    content: codeContent,
+                                    type: 'json',
+                                    language: 'json',
+                                });
+                                schema = {
+                                    type: 'nosql',
+                                    data: Array.isArray(jsonData) ? jsonData : [jsonData],
+                                };
+                            }
+                        }
+                    } catch (e) {
+                        artifacts.push({
+                            id: `${msg._id || Date.now()}-${artifacts.length}`,
+                            title: 'JSON Snippet (Invalid)',
+                            content: codeContent,
+                            type: 'code',
+                            language: 'json',
+                        });
+                    }
+                } else if (language === 'sql' || codeContent.includes('CREATE TABLE') || codeContent.includes('SELECT ')) {
+                    artifacts.push({
+                        id: `${msg._id || Date.now()}-${artifacts.length}`,
+                        title: 'SQL Snippet',
+                        content: codeContent,
+                        type: 'sql',
+                        language: 'sql',
+                    });
+                    schema = {
+                        type: 'sql',
+                        data: codeContent.split(';').filter(Boolean).map((stmt: string) => stmt.trim()),
+                    };
+                } else {
+                    artifacts.push({
+                        id: `${msg._id || Date.now()}-${artifacts.length}`,
+                        title: `${language.charAt(0).toUpperCase() + language.slice(1)} Snippet`,
+                        content: codeContent,
+                        type: 'code',
+                        language,
+                    });
+                }
+
+                lastIndex = match.index + match[0].length;
+            }
+
+            if (lastIndex < msg.content.length) {
+                contentParts.push(msg.content.slice(lastIndex));
+            }
+
+            cleanedContent = contentParts.join('').trim();
+
+            if (artifacts.length === 0 && !schema) {
+                const processed = processLargeContent(msg.content);
+                if (processed) {
+                    artifacts = [processed];
+                    cleanedContent = 'Here’s some content I’ve processed for you.';
+                }
+            }
+        }
+
+        if (msg.role === 'assistant' && currentProject?._schema?.type && currentProject._schema.statements && !schema) {
+            schema = {
+                type: currentProject._schema.type as 'sql' | 'nosql',
+                data: currentProject._schema.statements,
+            };
+        }
+
+        return {
+            id: msg._id || Date.now().toString(),
+            content: cleanedContent,
+            sender: msg.role === 'user' ? 'user' : 'ai',
+            timestamp: new Date(msg.timestamp || Date.now()),
+            schema,
+            artifacts: msg.artifacts ? [...msg.artifacts, ...artifacts] : artifacts,
+        };
+    };
+
+    useEffect(() => {
+        if (currentConversation && currentConversation.length > 0) {
+            const mappedMessages = currentConversation.map(mapToMessageType);
+            setMessages(mappedMessages);
+        } else {
+            setMessages([]);
+        }
+    }, [currentConversation]);
 
     const placeholderTemplates: Array<string> = [
-        'What\'s on your mind, ' + (user?.firstName || 'there') + '?',
-        'What do you want to talk about ' + (user?.firstName || 'today') + '?',
-        'What\'s the tea today ' + (user?.firstName || 'friend') + '?',
-        'What\'s the scoop, ' + (user?.firstName || 'buddy') + '?',
-        'What do you wanna build today ' + (user?.firstName || 'developer') + '?',
+        `What's on your mind, ${user?.firstName || 'there'}?`,
+        `What do you want to talk about ${user?.firstName || 'today'}?`,
+        `What's the tea today ${user?.firstName || 'friend'}?`,
+        `What's the scoop, ${user?.firstName || 'buddy'}?`,
+        `What do you wanna build today ${user?.firstName || 'developer'}?`,
     ];
 
     const randomPlaceholder = placeholderTemplates[Math.floor(Math.random() * placeholderTemplates.length)];
-    const [placeholder, setPlaceholder] = React.useState<string>(randomPlaceholder);
+    const [placeholder, setPlaceholder] = useState<string>(randomPlaceholder);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -701,14 +835,13 @@ const TextAreaFragment = () => {
                         {
                             id: Date.now().toString() + file.name,
                             title: file.name,
-                            content: event.target?.result as string
-                        }
+                            content: event.target?.result as string ?? '',
+                        },
                     ]);
                 }
             };
             reader.readAsText(file);
         });
-
 
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
@@ -719,7 +852,6 @@ const TextAreaFragment = () => {
         const textarea = textareaRef.current;
         if (!textarea) return;
 
-        const scrollPos = textarea.scrollTop;
         textarea.style.height = 'auto';
         const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight) || 20;
         const textRows = Math.max(1, Math.ceil(textarea.scrollHeight / lineHeight));
@@ -727,16 +859,14 @@ const TextAreaFragment = () => {
         const newHeight = visibleRows * lineHeight;
         textarea.style.height = `${newHeight}px`;
         textarea.style.overflowY = textRows > 10 ? 'auto' : 'hidden';
-        textarea.scrollTop = scrollPos;
     };
 
     useEffect(() => {
         adjustTextareaHeight();
-    }, [message]);
+    }, [message, selectedDocuments]);
 
     useEffect(() => {
         adjustTextareaHeight();
-
         window.addEventListener('resize', adjustTextareaHeight);
         return () => window.removeEventListener('resize', adjustTextareaHeight);
     }, []);
@@ -747,91 +877,88 @@ const TextAreaFragment = () => {
 
     const removeDocument = (id: string) => {
         setSelectedDocuments(prev => prev.filter(doc => doc.id !== id));
-    }
+    };
 
-    const handleSubmit = () => {
-        if (message.trim() && !isLoading) {
-            setIsLoading(true);
+    const handleSubmit = async () => {
+        if (!message.trim() && selectedDocuments.length === 0 || !currentProject?._id || !token || isLoading) return;
 
-            const userMessage: MessageType = {
-                id: Date.now().toString(),
-                content: message,
-                sender: 'user',
-                timestamp: new Date(),
-            };
+        setIsLoading(true);
 
-            if (message.length > 500) {
-                const artifact = processLargeContent(message);
-                if (artifact) {
-                    userMessage.content = "I've shared some content for you to analyze.";
-                    userMessage.artifacts = [artifact];
-                }
+        const userMessage: MessageType = {
+            id: Date.now().toString(),
+            content: message.trim() || '',
+            sender: 'user',
+            timestamp: new Date(),
+        };
+
+        const artifacts: NonNullable<MessageType['artifacts']> = [];
+        if (message.length > 500) {
+            const processed = processLargeContent(message);
+            if (processed) {
+                artifacts.push(processed);
+                userMessage.content = message.trim() ? "I've shared some content for you to analyze." : '';
             }
-
-
-            if (selectedDocuments.length > 0) {
-                const documentArtifacts = selectedDocuments.map(doc => {
-
-                    const processed = processLargeContent(doc.content);
-                    return {
-                        id: doc.id,
-                        title: doc.title,
-                        content: doc.content,
-                        type: processed?.type || 'text',
-                        language: processed?.language
-                    };
-                });
-
-                if (documentArtifacts.length > 0) {
-                    if (!userMessage.artifacts) {
-                        userMessage.artifacts = [];
-                    }
-                    userMessage.artifacts = [...userMessage.artifacts, ...documentArtifacts];
-
-
-                    if (!message.trim()) {
-                        userMessage.content = `I've shared ${documentArtifacts.length} document${documentArtifacts.length > 1 ? 's' : ''} for your review.`;
-                    }
-                }
+        }
+        if (selectedDocuments.length > 0) {
+            const documentArtifacts = selectedDocuments.map(doc => {
+                const processed = processLargeContent(doc.content) || {
+                    id: doc.id,
+                    title: doc.title,
+                    content: doc.content,
+                    type: 'text' as const,
+                };
+                return processed;
+            });
+            artifacts.push(...documentArtifacts);
+            if (!message.trim()) {
+                userMessage.content = `I've shared ${documentArtifacts.length} document${documentArtifacts.length > 1 ? 's' : ''} for your review.`;
             }
+        }
+        if (artifacts.length > 0) {
+            userMessage.artifacts = artifacts;
+        }
 
-            setMessages(prev => [...prev, userMessage]);
+        setMessages(prev => [...prev, userMessage]);
+        dispatch({
+            type: 'SET_CURRENT_CONVERSATION',
+            payload: [...(currentConversation || []), { role: 'user', content: userMessage.content }],
+        });
 
+        try {
+            await ContinueConversation(
+                currentProject._id,
+                { message: userMessage.content, schemaType },
+                token,
+                setIsLoading,
+                (response) => {
+                    const updatedProject = response.project;
+                    const updatedMessages = updatedProject?.messages || [];
+                    const mappedMessages = updatedMessages.map(mapToMessageType);
 
-            setTimeout(() => {
-                const aiResponse = generateAIResponse(message, schemaType);
-                setMessages(prev => [...prev, aiResponse]);
-
-                setMessage('');
-                setIsLoading(false);
-                setPastedContent(null);
-                setSelectedDocuments([]);
-
-                setTimeout(() => {
-                    if (textareaRef.current) {
-                        textareaRef.current.style.height = 'auto';
-                        adjustTextareaHeight();
-                    }
-                }, 10);
-            }, 1500);
+                    dispatch({
+                        type: 'SET_CURRENT_PROJECT',
+                        payload: updatedProject || null,
+                    });
+                    dispatch({
+                        type: 'SET_CURRENT_CONVERSATION',
+                        payload: updatedMessages,
+                    });
+                    setMessages(mappedMessages);
+                }
+            );
+        } catch (error: any) {
+            notifier.error('Failed to continue conversation', error.message);
+        } finally {
+            setMessage('');
+            setSelectedDocuments([]);
+            setIsLoading(false);
+            adjustTextareaHeight();
         }
     };
 
     const toggleSchemaType = () => {
-        setSchemaType(prev => prev === 'sql' ? 'nosql' : 'sql');
+        setSchemaType(prev => (prev === 'sql' ? 'nosql' : 'sql'));
     };
-
-    const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-        const pastedText = e.clipboardData.getData('text');
-        if (pastedText.length > 100) {
-            setPastedContent(pastedText);
-        }
-    };
-
-    const removePastedContent = () => {
-        setPastedContent(null);
-    };
-
 
     return (
         <>
@@ -856,19 +983,8 @@ const TextAreaFragment = () => {
             </div>
 
             {/* Input Area - Fixed at Bottom */}
-            <div
-                className="fixed bottom-4 border hover:shadow-sm bg-white border-gray-200 w-full max-w-3xl z-10 left-1/2 transform -translate-x-1/2 rounded-xl mx-auto px-4 py-3"
-            >
+            <div className="fixed bottom-4 border hover:shadow-sm bg-white border-gray-200 w-full max-w-3xl z-10 left-1/2 transform -translate-x-1/2 rounded-xl mx-auto px-4 py-3">
                 <div className="flex flex-col">
-                    {/* Pasted Content Preview */}
-                    {pastedContent && (
-                        <DocumentPreview
-                            content={pastedContent}
-                            title="Pasted Content"
-                            onRemove={removePastedContent}
-                        />
-                    )}
-
                     {selectedDocuments.length > 0 && (
                         <div className="mb-2 space-y-2">
                             {selectedDocuments.map((doc) => (
@@ -882,7 +998,6 @@ const TextAreaFragment = () => {
                         </div>
                     )}
 
-                    {/* Textarea */}
                     <div className="relative">
                         <textarea
                             ref={textareaRef}
@@ -890,7 +1005,6 @@ const TextAreaFragment = () => {
                             placeholder={placeholder}
                             value={message}
                             onChange={handleMessageChange}
-                            onPaste={handlePaste}
                             rows={1}
                             spellCheck={false}
                             style={{
@@ -908,18 +1022,17 @@ const TextAreaFragment = () => {
                         />
                     </div>
 
-                    {/* Controls */}
                     <div className="flex items-center justify-between mt-2 h-8">
-                        <div className="text-xs text-gray-500 gap-2 flex ">
-                            <span className={'px-2 py-1 text-xs mono rounded-lg bg-zinc-100 border border-gray-00'}> Enter + Shift</span>
-                            <span className={'px-2 py-1 text-xs mono rounded-lg bg-zinc-100 border border-gray-300'}> Enter</span>
+                        <div className="text-xs text-gray-500 gap-2 flex">
+                            <span className="px-2 py-1 text-xs mono rounded-lg bg-zinc-100 border border-gray-300">Enter + Shift</span>
+                            <span className="px-2 py-1 text-xs mono rounded-lg bg-zinc-100 border border-gray-300">Enter</span>
                         </div>
 
                         <div className="flex items-center space-x-2">
                             <button
                                 onClick={() => fileInputRef.current?.click()}
                                 className="flex items-center justify-center p-2 border border-dotted rounded-full hover:bg-gray-100 transition-colors"
-                                title="Change placeholder"
+                                title="Upload file"
                                 style={{ flexShrink: 0, width: '32px', height: '32px' }}
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
@@ -945,7 +1058,6 @@ const TextAreaFragment = () => {
                                 </svg>
                             </button>
 
-                            {/* Schema Type Toggle Button */}
                             <button
                                 onClick={toggleSchemaType}
                                 className="flex items-center justify-center p-2 border border-dotted rounded-full hover:bg-gray-100 transition-colors"
@@ -959,13 +1071,12 @@ const TextAreaFragment = () => {
                                 )}
                             </button>
 
-                            {/* Send Button */}
                             <button
                                 onClick={handleSubmit}
-                                disabled={!message.trim() || isLoading}
+                                disabled={(!message.trim() && selectedDocuments.length === 0) || isLoading}
                                 className={cx(
                                     "rounded-full flex items-center justify-center",
-                                    message.trim() && !isLoading
+                                    (message.trim() || selectedDocuments.length > 0) && !isLoading
                                         ? "bg-[#212a20] text-white hover:bg-opacity-80 transition-colors"
                                         : "bg-gray-200 text-gray-400 cursor-not-allowed"
                                 )}
@@ -989,8 +1100,58 @@ const TextAreaFragment = () => {
 };
 
 const ChatRoomFragment = () => {
+    const { state: { currentConversation, currentProject }, dispatch } = useStateValue();
+    const [isLoading, setIsLoading] = useState(false);
+    const [token, setToken] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const storedToken = localStorage.getItem('token');
+            setToken(storedToken);
+        }
+    }, []);
+
+    useEffect(() => {
+        const fetchProject = async () => {
+            if (!currentProject?._id || !token) return;
+
+            setIsLoading(true);
+            try {
+                await GetProject(
+                    currentProject._id,
+                    token,
+                    setIsLoading,
+                    (data) => {
+                        if (data && data.projects && Array.isArray(data.projects) && data.projects.length > 0) {
+                            const project = data.projects[0];
+                            dispatch({
+                                type: 'SET_CURRENT_PROJECT',
+                                payload: project,
+                            });
+                            dispatch({
+                                type: 'SET_CURRENT_CONVERSATION',
+                                payload: project.messages || [],
+                            });
+                        }
+                    }
+                );
+            } catch (error: any) {
+                console.error('Failed to fetch project:', error.message);
+                dispatch({
+                    type: 'SET_ERROR',
+                    payload: { name: 'FetchProjectError', message: error.message },
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchProject();
+    }, [currentProject?._id, token, dispatch]);
+
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-4 relative">
+            {isLoading && <LoaderFragment />}
             <TextAreaFragment />
         </div>
     );

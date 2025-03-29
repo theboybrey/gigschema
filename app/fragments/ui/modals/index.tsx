@@ -1,4 +1,6 @@
 import { Button } from '@/components/button';
+import { useStateValue } from '@/global/state.provider';
+import { formatDate } from '@/helper/date.format';
 import { Dialog } from '@headlessui/react';
 import { RiWalkFill } from '@remixicon/react';
 import {
@@ -12,6 +14,7 @@ import {
   User,
   X
 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import React, { useState } from 'react';
 
 interface ChatHistoryModalProps {
@@ -22,15 +25,11 @@ interface ChatHistoryModalProps {
 const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({ isOpen, onClose }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [hoveredChatId, setHoveredChatId] = useState<string | null>(null);
+  const { state: { projects, currentProject } } = useStateValue()
 
-  const chatHistory = [
-    { id: '1', title: 'Schema Validation Errors', duration: '25 hours ago', isCurrent: true },
-    { id: '2', title: 'JSON-LD Implementation', duration: '36 hours ago', isCurrent: false },
-    { id: '3', title: 'SEO Schema Setup', duration: '2 days ago', isCurrent: false },
-  ];
-
+  const chatHistory = projects
   const filteredChats = chatHistory.filter((chat) =>
-    chat.title.toLowerCase().includes(searchTerm.toLowerCase())
+    chat.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -83,22 +82,22 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({ isOpen, onClose }) 
 
             </div>
           ) : (
-            filteredChats.map((chat) => (
+            filteredChats.map((chat, index) => (
               <div
-                key={chat.id}
-                className={`px-4 py-3 border-b border-gray-100 cursor-pointer ${chat.isCurrent ? 'bg-blue-50' : 'hover:bg-gray-50'
+                key={chat._id ?? index}
+                className={`px-4 py-3 border-b border-gray-100 cursor-pointer ${chat?._id === currentProject?._id ? 'bg-blue-50' : 'hover:bg-gray-50'
                   } group relative`}
-                onMouseEnter={() => setHoveredChatId(chat.id)}
+                onMouseEnter={() => setHoveredChatId(chat?._id!)}
                 onMouseLeave={() => setHoveredChatId(null)}
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className={`text-sm font-medium ${chat.isCurrent ? 'text-blue-600' : 'text-gray-800'}`}>
-                      {chat.title}
+                    <p className={`text-sm font-medium ${chat?._id === currentProject?._id ? 'text-blue-600' : 'text-gray-800'}`}>
+                      {chat.name}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">{chat.duration}</p>
+                    <p className="text-xs text-gray-500 mt-1">{formatDate(chat?.createdAt!)}</p>
                   </div>
-                  {hoveredChatId === chat.id && (
+                  {hoveredChatId === chat._id && (
                     <div className="flex space-x-2">
                       <button
                         className="text-gray-500 hover:text-blue-600 p-1 rounded-full hover:bg-blue-50 transition-colors"
