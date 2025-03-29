@@ -11,7 +11,6 @@ const SchemaAssistant = (props: Props) => {
   return (
     <div>
       <HeaderFragment />
-      <TextAreaFragment />
       <ChatRoomFragment />
     </div>
   )

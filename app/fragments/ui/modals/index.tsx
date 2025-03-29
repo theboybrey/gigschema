@@ -1,20 +1,18 @@
-import React, { useState } from 'react';
+import { Button } from '@/components/button';
 import { Dialog } from '@headlessui/react';
+import { RiWalkFill } from '@remixicon/react';
 import {
-  Archive,
-  PenLine,
   Palette,
+  PenLine,
   Plus,
+  Search,
   Settings,
   Shield,
   Trash2,
   User,
-  X,
-  Search,
-  CircleUser
+  X
 } from 'lucide-react';
-import { RiWalkFill } from '@remixicon/react';
-import { Button } from '@/components/button';
+import React, { useState } from 'react';
 
 interface ChatHistoryModalProps {
   isOpen: boolean;
@@ -46,7 +44,9 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({ isOpen, onClose }) 
         {/* Header */}
         <div className=" border-b border-gray-100 p-4 flex items-center justify-between">
           <h2 className="text-lg font-medium font-syne text-gray-800 flex items-center space-x-2">
-            <Archive className="w-5 h-5 " />
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776" />
+            </svg>
             <span>Recent Chat History</span>
           </h2>
           <button
@@ -76,7 +76,7 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({ isOpen, onClose }) 
             <div className="text-center py-10 text-gray-500">
               <div className="flex items-center justify-center">
                 <span className='w-20 h-20 rounded-full border border-gray-300 bg-slate-50 flex items-center justify-center'>
-                  <RiWalkFill className={'text-muted-foreground w-10 h-10'}/>
+                  <RiWalkFill className={'text-muted-foreground w-10 h-10'} />
                 </span>
               </div>
               <p className='mt-2 text-sm '>No schema chats found</p>
@@ -121,10 +121,12 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({ isOpen, onClose }) 
         </div>
         {/* Footer */}
         <div className=" border-t border-gray-100 p-4 flex justify-center">
-          <Button 
-          variant='secondary'
-          className="hover:text-blue-500 text-muted-foreground border border-dashed hover:bg-blue-50 px-4 py-2 rounded-lg transition-colors flex items-center space-x-2">
-            <Plus className="w-5 h-5" />
+          <Button
+            variant='secondary'
+            className="hover:text-blue-500 text-muted-foreground border border-dashed hover:bg-blue-50 px-4 py-2 rounded-lg transition-colors flex items-center space-x-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 10.5v6m3-3H9m4.06-7.19-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+            </svg>
             <span>New Schema Chat</span>
           </Button>
         </div>

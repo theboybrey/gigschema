@@ -1,6 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&family=Raleway:ital,wght@0,100..900;1,100..900&family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&family=Syne:wght@400..800&display=swap");
-@import url("https://fonts.vercel.com/geist-sans.css");
-@import url("https://fonts.vercel.com/geist-mono.css");
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Faculty+Glyphic&family=Funnel+Sans:ital,wght@0,300..800;1,300..800&family=Geist+Mono:wght@100..900&family=Hanken+Grotesk:ital,wght@0,100..900;1,100..900&family=Raleway:ital,wght@0,100..900;1,100..900&family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&family=Syne:wght@400..800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -98,7 +96,7 @@
   * {
   }
   body {
-    font-family: var(--font-geist-sans) !important; 
+    font-family: var(--font-geist-sans) !important;
     background-color: var(--background);
     color: var(--foreground);
   }
@@ -208,6 +206,10 @@
   font-family: "GeistMono" !important;
 }
 
+.mono {
+  font-family: "Geist Mono", monospace !important;
+}
+
 @keyframes spin {
   0% {
     transform: rotate(0deg);
@@ -228,5 +230,3 @@
 .font-schibsted {
   font-family: "Schibsted Grotesk" !important;
 }
-
-
