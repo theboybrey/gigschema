@@ -2,15 +2,20 @@ import { GetChats } from "@/app/api/services/chat.service";
 import { GetProjects } from "@/app/api/services/project.service";
 import { AuthContext } from "@/context/auth.context";
 import { useStateValue } from "@/global/state.provider";
-import { PlusIcon, ChevronDownIcon, SettingsIcon, LogOutIcon, UserIcon } from "lucide-react";
+import { PlusIcon, ChevronDownIcon, SettingsIcon, LogOutIcon, UserIcon, HistoryIcon } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import NewProjectModal from "../new-chat";
+import { ChatHistoryModal, SettingsModal } from "../modals";
+import { IProject } from "@/interface";
+import { RiBarcodeBoxLine, RiErrorWarningLine, RiLoader5Fill, RiTriangleLine } from "@remixicon/react";
 
 const HeaderFragment = () => {
     const [loading, setLoading] = useState(false);
     const [isNewProjectOpen, setIsNewProjectOpen] = useState(false);
     const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+    const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(false);
+    const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
     const { state, dispatch } = useStateValue();
     const authContext = useContext(AuthContext);
 
@@ -35,7 +40,6 @@ const HeaderFragment = () => {
         }
     }, [authContext?.token, dispatch]);
 
-    // Function to get user initials
     const getUserInitials = (name: string) => {
         if (!name) return '?';
         const names = name.split(' ');
@@ -44,15 +48,17 @@ const HeaderFragment = () => {
             : names[0][0].toUpperCase();
     };
 
+    // Get the 4 most recent projects, sorted by creation date
+    const getLatestProjects = () => {
+        return state.projects
+    };
+
     const handleLogout = () => {
-        // Implement logout logic
         authContext?.handleLogout();
     };
 
     const handleSettings = () => {
-        // Navigate to settings page or open settings modal
-        // Replace with your actual navigation/modal logic
-        console.log('Open settings');
+        setIsSettingsModalOpen(true);
     };
 
     return (
@@ -70,34 +76,66 @@ const HeaderFragment = () => {
                                     <h1 className="text-xl font-medium font-syne truncate max-w-[200px]">
                                         {state.currentProject?.name || "Schema Design Assistant"}
                                     </h1>
-                                    <ChevronDownIcon className="w-4 h-4 text-gray-500" />
+
+                                    {loading ? (
+                                        <span className="text-sm text-gray-500 animate-pulse">
+                                            <RiLoader5Fill className="w-4 h-4 inline-block spinner" />
+                                        </span>
+
+                                    ) : state.projects.length > 0 ?
+                                        (
+                                            <ChevronDownIcon className="w-4 h-4 text-gray-500" />
+                                        ) :
+                                        (
+                                            <span className="text-sm text-gray-500">
+                                                <RiBarcodeBoxLine className="w-4 h-4 inline-block" />
+                                            </span>
+                                        )
+
+                                    }
                                 </button>
 
                                 {isProjectDropdownOpen && (
-                                    <div className="absolute left-0 mt-2 w-56 origin-top-left bg-white divide-y divide-gray-100 rounded-lg shadow-lg ring-1 ring-black/5 focus:outline-none">
+                                    <div className="absolute left-0 mt-2 w-72 origin-top-left bg-white divide-y divide-gray-100 rounded-xl shadow-lg ring-1 ring-black/5 focus:outline-none overflow-hidden">
                                         <div className="px-1 py-1">
-                                            {state.projects.map((project) => (
+                                            <div className="px-3 py-2 text-xs text-gray-500 uppercase tracking-wider">
+                                                Recent Projects
+                                            </div>
+                                            {getLatestProjects().map((project) => (
                                                 <button
                                                     key={project._id}
                                                     onClick={() => {
                                                         dispatch({ type: "SET_CURRENT_PROJECT", payload: project });
                                                         setIsProjectDropdownOpen(false);
                                                     }}
-                                                    className="group flex w-full items-center rounded-md px-2 py-2 text-sm hover:bg-gray-100"
+                                                    className={`group flex w-full items-center rounded-md px-3 py-2 text-sm hover:bg-gray-100 ${state.currentProject?._id === project._id
+                                                        ? 'bg-blue-50 text-blue-600 font-medium'
+                                                        : ''
+                                                        }`}
                                                 >
-                                                    {project.name}
+                                                    <span className="truncate">{project.name}</span>
+                                                    {state.currentProject?._id === project._id && (
+                                                        <span className="ml-auto text-blue-600">●</span>
+                                                    )}
                                                 </button>
                                             ))}
+                                            {state.projects.length > 4 && (
+                                                <button
+                                                    onClick={() => {
+                                                        setIsProjectDropdownOpen(false);
+                                                        setIsChatHistoryOpen(true);
+                                                    }}
+                                                    className="group flex w-full items-center rounded-md px-3 py-2 text-sm hover:bg-gray-100 text-blue-600 font-semibold"
+                                                >
+                                                    View All Projects
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 )}
                             </div>
 
-                            {loading && (
-                                <span className="text-sm text-gray-500 animate-pulse">
-                                    Loading...
-                                </span>
-                            )}
+
                         </div>
 
                         {/* Actions */}
@@ -109,6 +147,15 @@ const HeaderFragment = () => {
                             >
                                 <PlusIcon className="w-5 h-5" />
                                 <span className="hidden sm:inline">New Project</span>
+                            </button>
+
+                            {/* Chat History Button */}
+                            <button
+                                onClick={() => setIsChatHistoryOpen(true)}
+                                className="flex items-center gap-2 text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-lg transition-colors"
+                            >
+                                <HistoryIcon className="w-5 h-5" />
+                                <span className="hidden sm:inline">History</span>
                             </button>
 
                             {/* User Profile */}
@@ -140,9 +187,9 @@ const HeaderFragment = () => {
                                             </button>
                                             <button
                                                 onClick={handleLogout}
-                                                className="group flex w-full items-center rounded-md px-2 py-2 text-sm hover:bg-gray-100 hover:text-red-600"
+                                                className="group flex w-full items-center rounded-md px-2 py-2 text-sm bg-rose-100 text-rose-600"
                                             >
-                                                <LogOutIcon className="mr-2 w-4 h-4 text-gray-500" />
+                                                <LogOutIcon className="mr-2 w-4 h-4 text-rose-500" />
                                                 Logout
                                             </button>
                                         </div>
@@ -154,9 +201,18 @@ const HeaderFragment = () => {
                 </div>
             </div>
 
+            {/* Modals */}
             <NewProjectModal
                 isOpen={isNewProjectOpen}
                 onClose={() => setIsNewProjectOpen(false)}
+            />
+            <ChatHistoryModal
+                isOpen={isChatHistoryOpen}
+                onClose={() => setIsChatHistoryOpen(false)}
+            />
+            <SettingsModal
+                isOpen={isSettingsModalOpen}
+                onClose={() => setIsSettingsModalOpen(false)}
             />
         </>
     );
