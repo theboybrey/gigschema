@@ -1,26 +1,22 @@
-import React, { useState, useContext } from "react";
-import { 
-  FolderPlus, 
-  XIcon, 
-  Database, 
-  FileText, 
-  Table, 
-  Layers, 
-  ChevronRight, 
-  Server, 
-  Columns, 
-  BetweenHorizonalEnd,
-  DatabaseZap
-} from "lucide-react";
-import { useStateValue } from "@/global/state.provider";
-import { AuthContext } from "@/context/auth.context";
 import { CreateProject as CreateProjectService } from "@/app/api/services/project.service";
+import { AuthContext } from "@/context/auth.context";
+import { useStateValue } from "@/global/state.provider";
+import {
+    BetweenHorizonalEnd,
+    ChevronRight,
+    DatabaseZap,
+    FolderPlus,
+    Server,
+    XIcon
+} from "lucide-react";
+import React, { useContext, useState } from "react";
 import { FaDatabase } from "react-icons/fa";
 import { SiMongodb } from "react-icons/si";
+import { useRouter } from "next/navigation";
 
 const SchemaTypeIcon = {
-  sql: <FaDatabase className="w-5 h-5 " />,
-  nosql: <SiMongodb className="w-5 h-5 " />
+    sql: <FaDatabase className="w-5 h-5 " />,
+    nosql: <SiMongodb className="w-5 h-5 " />
 };
 
 const NewProjectModal = ({ isOpen, onClose }: {
@@ -29,6 +25,7 @@ const NewProjectModal = ({ isOpen, onClose }: {
 }) => {
     const { state, dispatch } = useStateValue();
     const authContext = useContext(AuthContext);
+    const router = useRouter();
 
     const [loading, setLoading] = useState(false);
     const [details, setDetails] = useState({
@@ -71,10 +68,16 @@ const NewProjectModal = ({ isOpen, onClose }: {
         try {
             await CreateProjectService(details as any, authContext.token, setLoading, (response) => {
                 if (response.project) {
+                    setDetails({
+                        name: "",
+                        description: "",
+                        schemaType: "sql",
+                    })
                     dispatch({
                         type: "SET_PROJECTS",
                         payload: [...state.projects, response.project]
                     });
+                    router.push(`/?project=${response.project._id}&zipper=${response.project.visibility}`);
                     onClose();
                 }
             });
@@ -112,7 +115,6 @@ const NewProjectModal = ({ isOpen, onClose }: {
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-6">
-                    {/* Project Details Form */}
                     <div className="md:col-span-2 space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -166,7 +168,7 @@ const NewProjectModal = ({ isOpen, onClose }: {
                                             onChange={() => setDetails(prev => ({ ...prev, schemaType: type }))}
                                             className="hidden"
                                         />
-                                        {SchemaTypeIcon[type as keyof typeof SchemaTypeIcon]} 
+                                        {SchemaTypeIcon[type as keyof typeof SchemaTypeIcon]}
                                         <span className="ml-2 capitalize">{type?.toUpperCase()}</span>
                                     </label>
                                 ))}
@@ -184,7 +186,7 @@ const NewProjectModal = ({ isOpen, onClose }: {
                     </div>
 
                     {/* Project Templates */}
-                    <div className="border-l pl-6 border-gray-200">
+                    <div className="border-t pl-0 pt-4 md:pt-0 md:border-l md:border-t-0 md:pl-6 border-gray-200">
                         <h3 className="text-sm font-medium text-gray-700 mb-4">
                             Quick Templates
                         </h3>
@@ -195,8 +197,8 @@ const NewProjectModal = ({ isOpen, onClose }: {
                                     onClick={() => selectTemplate(template)}
                                     className={`
                                         flex items-center justify-between p-4 border rounded-lg cursor-pointer group
-                                        ${details.name === template.name 
-                                            ? "border-blue-500 bg-slate-50" 
+                                        ${details.name === template.name
+                                            ? "border-blue-500 bg-slate-50"
                                             : "border-gray-200 hover:bg-gray-50"}
                                     `}
                                 >

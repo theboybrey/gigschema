@@ -1,13 +1,11 @@
 "use client"
-import React from 'react'
 import HeaderFragment from '../header'
-import { TextAreaFragment, ChatRoomFragment } from '../textarea'
+import { ChatRoomFragment } from '../textarea'
 
 
 
-type Props = {}
 
-const SchemaAssistant = (props: Props) => {
+const SchemaAssistant = () => {
   return (
     <div>
       <HeaderFragment />

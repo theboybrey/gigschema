@@ -7,6 +7,9 @@ import { ChevronDownIcon, LogOutIcon, PlusIcon, SettingsIcon } from "lucide-reac
 import { useContext, useEffect, useState } from "react";
 import { ChatHistoryModal, SettingsModal } from "../modals";
 import NewProjectModal from "../new-chat";
+import { IProject } from "@/interface";
+import { routeros } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import { useRouter } from "next/navigation";
 
 const HeaderFragment = () => {
     const [loading, setLoading] = useState(false);
@@ -17,6 +20,7 @@ const HeaderFragment = () => {
     const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
     const { state, dispatch } = useStateValue();
     const authContext = useContext(AuthContext);
+    const router = useRouter();
 
     useEffect(() => {
         const token = authContext?.token;
@@ -47,10 +51,20 @@ const HeaderFragment = () => {
             : names[0][0].toUpperCase();
     };
 
-    // Get the 4 most recent projects, sorted by creation date
-    const getLatestProjects = () => {
-        return state.projects
+    const getLatestProjects = (): IProject[] => {
+        let projects: IProject[] = [];
+
+        if (state.projects && state.projects.length > 0) {
+            projects = [...state.projects]
+                .filter(p => p.createdAt)
+                .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+                .slice(0, 4);
+        }
+
+        return projects;
     };
+
+
 
     const handleLogout = () => {
         authContext?.handleLogout();
@@ -105,6 +119,7 @@ const HeaderFragment = () => {
                                                     key={project._id}
                                                     onClick={() => {
                                                         dispatch({ type: "SET_CURRENT_PROJECT", payload: project });
+                                                        router.push(`/?${project._id}&zipper=${project.visibility ? project.visibility : 'private'}`);
                                                         setIsProjectDropdownOpen(false);
                                                     }}
                                                     className={`group flex w-full items-center rounded-md px-3 py-2 text-sm hover:bg-gray-100 ${state.currentProject?._id === project._id
