@@ -1,15 +1,11 @@
-"use client"
 import { AuthProvider } from "@/context/auth.context"
 import React from "react"
 import { AuthorizeResourceHeaders } from "."
 
-type Props = {
+
+export default function AuthenticatorFragment({ children }: {
     children: React.ReactNode
-}
-
-
-export default function AuthenticatorFragment({ children }: Props) {
-
+}) {
 
     return (
         <AuthProvider>
@@ -18,6 +14,5 @@ export default function AuthenticatorFragment({ children }: Props) {
             </AuthorizeResourceHeaders>
         </AuthProvider>
     )
-
 }
 
