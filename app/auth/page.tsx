@@ -8,9 +8,7 @@ type Props = {
 }
 
 
-const AuthenticatorFragment = ({ children }: Props) => {
-
-
+export default function AuthenticatorFragment({ children }: Props) {
 
 
     return (
@@ -23,4 +21,3 @@ const AuthenticatorFragment = ({ children }: Props) => {
 
 }
 
-export default AuthenticatorFragment

@@ -20,7 +20,6 @@ type MessageType = {
     timestamp: Date;
     schema?: {
         type: 'sql' | 'nosql';
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         data: any;
     }
     artifacts?: Array<{
@@ -148,7 +147,6 @@ const ArtifactModal = ({
     );
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const EntityTable = ({ data, schemaType }: { data: any, schemaType: 'sql' | 'nosql' }) => {
     const [isExpanded, setIsExpanded] = useState(true);
 
@@ -201,7 +199,6 @@ const EntityTable = ({ data, schemaType }: { data: any, schemaType: 'sql' | 'nos
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {isArray ? (
-                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 data.map((item: any, idx: number) => (
                                     <tr key={idx} className="hover:bg-gray-50">
                                         {keys.map((key) => (
@@ -420,11 +417,11 @@ const MessageComponent = ({ message }: { message: MessageType }) => {
         }
     }
 
-    function detectCode(content: string) {
-        const parts = []
-        const codeRegex = /```(.*?)\n([\s\S]*?)```/g
-        let lastIndex = 0
-        let match
+    const detectCode = (content: string) => {
+        const parts: Array<{ type: 'text' | 'code', content: string, language?: string }> = [];
+        const codeRegex = /```(.*?)\n([\s\S]*?)```/g;
+        let lastIndex = 0;
+        let match;
 
         while ((match = codeRegex.exec(content)) !== null) {
             if (match.index > lastIndex) {
@@ -434,10 +431,13 @@ const MessageComponent = ({ message }: { message: MessageType }) => {
                 });
             }
 
+            const language = match[1]?.trim() || 'plaintext';
+            const codeContent = match[2]?.trim() || '';
+
             parts.push({
                 type: 'code',
-                language: match[1] || 'plaintext',
-                content: match[2]
+                language,
+                content: codeContent
             });
 
             lastIndex = match.index + match[0].length;
@@ -451,7 +451,7 @@ const MessageComponent = ({ message }: { message: MessageType }) => {
         }
 
         return parts;
-    }
+    };
 
     const contentParts = detectCode(message.content);
 
@@ -571,47 +571,197 @@ const processLargeContent = (content: string): NonNullable<MessageType['artifact
 
     let type: 'text' | 'code' | 'json' | 'sql' | 'nosql' = 'text';
     let language: string | undefined = undefined;
+    let title = 'Large Text';
 
     try {
-        JSON.parse(content);
+        const jsonData = JSON.parse(content);
         type = 'json';
-    } catch (e: any) {
-        // If JSON parsing fails, check for other types
-        if (process.env.NODE_ENV === 'development') {
-            console.error('Invalid JSON:', e);
-        }
+        language = 'json';
+        title = 'JSON Data';
+
         if (
-            content.includes('function') ||
-            content.includes('class') ||
+            typeof jsonData === 'object' &&
+            !Array.isArray(jsonData) &&
+            jsonData !== null &&
+            Object.values(jsonData).some((val: any) =>
+                typeof val === 'object' && (val.type || val.ref)
+            )
+        ) {
+            title = 'Database Schema (JSON)';
+        }
+    } catch (e) {
+        console.error('Invalid JSON:', e);
+        if (
+            /CREATE\s+TABLE/i.test(content) ||
+            /SELECT\s+.*\s+FROM/i.test(content) ||
+            /INSERT\s+INTO/i.test(content) ||
+            /UPDATE\s+.*\s+SET/i.test(content) ||
+            /ALTER\s+TABLE/i.test(content) ||
+            content.includes(';') &&
+            (content.includes('SELECT') || content.includes('FROM') || content.includes('WHERE'))
+        ) {
+            type = 'sql';
+            language = 'sql';
+            title = 'SQL Query';
+
+            if (/CREATE\s+TABLE/i.test(content)) {
+                title = 'SQL Schema';
+            }
+        }
+        else if (
+            content.includes('function ') ||
+            content.includes('class ') ||
             content.includes('import ') ||
             content.includes('const ') ||
             content.includes('let ') ||
-            content.includes('var ')
+            content.includes('var ') ||
+            content.includes('def ') ||
+            content.includes('public ') ||
+            content.includes('private ') ||
+            content.includes('return ') ||
+            (content.includes('{') && content.includes('}'))
         ) {
             type = 'code';
-            if (content.includes('function') || content.includes('const') || content.includes('let')) {
+
+            if (content.includes('function') || content.includes('const') || content.includes('let') || content.includes('var')) {
                 language = 'javascript';
+                title = 'JavaScript Code';
             } else if (content.includes('import ') && content.includes('from ')) {
                 language = 'typescript';
-            } else if (content.includes('def ') || content.includes('print(')) {
+                title = 'TypeScript Code';
+            } else if (content.includes('def ') || content.includes('print(') || content.includes('import ') && !content.includes('from ')) {
                 language = 'python';
-            } else if (content.includes('class ') && content.includes('public ')) {
+                title = 'Python Code';
+            } else if (content.includes('class ') && (content.includes('public ') || content.includes('private '))) {
                 language = 'java';
+                title = 'Java Code';
+            } else {
+                language = 'plaintext';
+                title = 'Code Snippet';
             }
-        } else if (content.includes('CREATE TABLE') || content.includes('SELECT ') || content.includes('INSERT INTO')) {
-            type = 'sql';
-            language = 'sql';
         }
     }
 
     return {
-        id: Date.now().toString(),
-        title: type === 'json' ? 'JSON Data' : (type === 'code' ? `${language || 'Code'} Snippet` : type === 'sql' ? 'SQL Schema' : 'Large Text'),
+        id: `artifact-${Date.now()}`,
+        title,
         content,
         type,
         language,
     };
 };
+
+const detectCode = (content: string) => {
+    const parts: Array<{ type: 'text' | 'code', content: string, language?: string }> = [];
+    const codeRegex = /```(.*?)\n([\s\S]*?)```/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = codeRegex.exec(content)) !== null) {
+        if (match.index > lastIndex) {
+            parts.push({
+                type: 'text',
+                content: content.slice(lastIndex, match.index)
+            });
+        }
+
+        const language = match[1]?.trim() || 'plaintext';
+        const codeContent = match[2]?.trim() || '';
+
+        parts.push({
+            type: 'code',
+            language,
+            content: codeContent
+        });
+
+        lastIndex = match.index + match[0].length;
+    }
+
+    if (lastIndex < content.length) {
+        parts.push({
+            type: 'text',
+            content: content.slice(lastIndex)
+        });
+    }
+
+    return parts;
+};
+
+const processAIMessage = (message: MessageType): MessageType => {
+    if (message.sender !== 'ai') return message;
+
+    const contentParts = detectCode(message.content);
+    let cleanedContent = '';
+    const artifacts: NonNullable<MessageType['artifacts']> = message.artifacts || [];
+
+    contentParts.forEach((part, index) => {
+        if (part.type === 'text') {
+            cleanedContent += part.content;
+        } else if (part.type === 'code') {
+            const codeContent = part.content;
+            const language = part.language || 'plaintext';
+
+            if (language === 'sql' || /CREATE\s+TABLE/i.test(codeContent) || /SELECT\s+.*\s+FROM/i.test(codeContent)) {
+                artifacts.push({
+                    id: `${message.id}-sql-${index}`,
+                    title: 'SQL Query',
+                    content: codeContent,
+                    type: 'sql',
+                    language: 'sql',
+                });
+                cleanedContent += `\n[SQL Query]\n`;
+            }
+            else if (language === 'json') {
+                try {
+                    JSON.parse(codeContent);
+                    artifacts.push({
+                        id: `${message.id}-json-${index}`,
+                        title: 'JSON Data',
+                        content: codeContent,
+                        type: 'json',
+                        language: 'json',
+                    });
+                    cleanedContent += `\n[JSON Data]\n`;
+                } catch (e) {
+                    console.error('Invalid JSON:', e);
+                    artifacts.push({
+                        id: `${message.id}-code-${index}`,
+                        title: `${language.charAt(0).toUpperCase() + language.slice(1)} Code`,
+                        content: codeContent,
+                        type: 'code',
+                        language,
+                    });
+                    cleanedContent += `\n[Code Snippet]\n`;
+                }
+            }
+            else {
+                artifacts.push({
+                    id: `${message.id}-code-${index}`,
+                    title: `${language.charAt(0).toUpperCase() + language.slice(1)} Code`,
+                    content: codeContent,
+                    type: 'code',
+                    language,
+                });
+                cleanedContent += `\n[Code Snippet]\n`;
+            }
+        }
+    });
+
+    if (artifacts.length === 0 && message.content.length > 500) {
+        const processed = processLargeContent(message.content);
+        if (processed) {
+            artifacts.push(processed);
+            cleanedContent = `Here's some content I've processed for you:`;
+        }
+    }
+
+    return {
+        ...message,
+        content: cleanedContent.trim(),
+        artifacts
+    };
+};
+
 
 const TextAreaFragment = () => {
     const { state: { user, currentConversation, currentProject }, dispatch } = useStateValue();
@@ -625,123 +775,30 @@ const TextAreaFragment = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const token = localStorage.getItem('token') || '';
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mapToMessageType = (msg: any): MessageType => {
-        let schema: MessageType['schema'] = undefined;
-        let artifacts: MessageType['artifacts'] = [];
-        let cleanedContent = msg.content || '';
-
-        if (msg.content) {
-            const codeRegex = /```(.*?)\n([\s\S]*?)\n```/g;
-            let match;
-            let lastIndex = 0;
-            const contentParts: string[] = [];
-
-            while ((match = codeRegex.exec(msg.content)) !== null) {
-                if (match.index > lastIndex) {
-                    contentParts.push(msg.content.slice(lastIndex, match.index));
-                }
-
-                const language = match[1].trim() || 'plaintext';
-                const codeContent = match[2].trim();
-
-                if (language === 'json') {
-                    try {
-                        const jsonData = JSON.parse(codeContent);
-                        if (typeof jsonData === 'object' && !Array.isArray(jsonData) && jsonData !== null) {
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            const isSchema = Object.values(jsonData).some((val: any) =>
-                                typeof val === 'object' && (val.type || val.ref || Object.values(val).some(v => typeof v === 'string'))
-                            );
-                            if (isSchema) {
-                                schema = {
-                                    type: 'nosql',
-                                    data: Object.entries(jsonData).map(([collection, fields]) => ({
-                                        collection,
-                                        ...(typeof fields === 'object' && fields !== null ? fields : {}),
-                                    })),
-                                };
-                            } else {
-                                artifacts.push({
-                                    id: `${msg._id || Date.now()}-${artifacts.length}`,
-                                    title: 'JSON Data',
-                                    content: codeContent,
-                                    type: 'json',
-                                    language: 'json',
-                                });
-                                schema = {
-                                    type: 'nosql',
-                                    data: Array.isArray(jsonData) ? jsonData : [jsonData],
-                                };
-                            }
-                        }
-                    } catch (e) {
-                        if (process.env.NODE_ENV === 'development') {
-                            console.error('Invalid JSON:', e);
-                        }
-                        artifacts.push({
-                            id: `${msg._id || Date.now()}-${artifacts.length}`,
-                            title: 'JSON Snippet (Invalid)',
-                            content: codeContent,
-                            type: 'code',
-                            language: 'json',
-                        });
-                    }
-                } else if (language === 'sql' || codeContent.includes('CREATE ') || codeContent.includes('SELECT ')) {
-                    artifacts.push({
-                        id: `${msg._id || Date.now()}-${artifacts.length}`,
-                        title: 'SQL Snippet',
-                        content: codeContent,
-                        type: 'sql',
-                        language: 'sql',
-                    });
-                    schema = {
-                        type: 'sql',
-                        data: codeContent.split(';').filter(Boolean).map((stmt: string) => stmt.trim()),
-                    };
-                } else {
-                    artifacts.push({
-                        id: `${msg._id || Date.now()}-${artifacts.length}`,
-                        title: `${language.charAt(0).toUpperCase() + language.slice(1)} Snippet`,
-                        content: codeContent,
-                        type: 'code',
-                        language,
-                    });
-                }
-
-                lastIndex = match.index + match[0].length;
-            }
-
-            if (lastIndex < msg.content.length) {
-                contentParts.push(msg.content.slice(lastIndex));
-            }
-
-            cleanedContent = contentParts.join('').trim();
-
-            if (artifacts.length === 0 && !schema) {
-                const processed = processLargeContent(msg.content);
-                if (processed) {
-                    artifacts = [processed];
-                    cleanedContent = 'Here’s some content I’ve processed for you.';
-                }
-            }
-        }
-
-        if (msg.role === 'assistant' && currentProject?._schema?.type && currentProject._schema.statements && !schema) {
-            schema = {
-                type: currentProject._schema.type as 'sql' | 'nosql',
-                data: currentProject._schema.statements,
-            };
-        }
-
-        return {
+        const baseMessage: MessageType = {
             id: msg._id || Date.now().toString(),
-            content: cleanedContent,
+            content: msg.content || '',
             sender: msg.role === 'user' ? 'user' : 'ai',
             timestamp: new Date(msg.timestamp || Date.now()),
-            schema,
-            artifacts: msg.artifacts ? [...msg.artifacts, ...artifacts] : artifacts,
+            schema: undefined,
+            artifacts: msg.artifacts || [],
         };
+
+        if (baseMessage.sender === 'user') {
+            if (baseMessage.content.length > 500) {
+                const processed = processLargeContent(baseMessage.content);
+                if (processed) {
+                    baseMessage.artifacts = [...(baseMessage.artifacts || []), processed];
+                    baseMessage.content = "I've shared some content for you to analyze.";
+                }
+            }
+        } else {
+            const processedMessage = processAIMessage(baseMessage);
+            return processedMessage;
+        }
+
+        return baseMessage;
     };
 
     useEffect(() => {
@@ -896,7 +953,6 @@ const TextAreaFragment = () => {
                     setMessages(mappedMessages);
                 }
             );
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             notifier.error('Failed to continue conversation', error.message);
         } finally {
@@ -1086,7 +1142,6 @@ const ChatRoomFragment = () => {
                         }
                     }
                 );
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (error: any) {
                 console.error('Failed to fetch project:', error.message);
                 dispatch({
