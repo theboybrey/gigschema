@@ -1,11 +1,6 @@
-import { RetryOperation } from "@/helper/operation.retry";
-import {
-  IContinueConversationDTO,
-  ICreateProjectDTO,
-  IProject,
-} from "@/interface/";
-import Axios from "../axios";
 import { notifier } from "@/components/notifier";
+import { IContinueConversationDTO, IProject } from "@/interface/";
+import Axios from "../axios";
 
 interface ApiResponse<T> {
   project?: T;
@@ -32,6 +27,8 @@ export const CreateProject = async (
       notifier.success("New schema document created", "Project Created");
       callback(data);
     }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     const errorMessage =
       error.response?.data?.message || error?.message || "Unknown error";
@@ -67,6 +64,7 @@ export async function ContinueConversation(
     if (data && data.project) {
       callback(data);
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error?.message;
     notifier.error(errorMessage, "Conversation Error");
@@ -97,6 +95,7 @@ export async function GetProjects(
     if (data && data.projects) {
       callback(data);
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error?.message;
     notifier.error(errorMessage, "Project Fetch Error");
@@ -162,6 +161,7 @@ export async function UpdateProject(
       notifier.success("Schema document updated", "Project Updated");
       callback(data);
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error?.message;
     notifier.error(errorMessage, "Project Update Error");
@@ -175,7 +175,6 @@ export async function DeleteProject(
   token: string,
   setLoading: (loading: boolean) => void,
   callback: (response: ApiResponse<IProject>) => void
-  
 ) {
   setLoading(true);
 
@@ -195,6 +194,7 @@ export async function DeleteProject(
       notifier.success("Schema document deleted", "Project Deleted");
       callback(data);
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error?.message;
     notifier.error(errorMessage, "Project Deletion Error");

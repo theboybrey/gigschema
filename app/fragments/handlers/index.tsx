@@ -1,8 +1,7 @@
 import React from 'react'
 
-type Props = {}
 
-const SessionHandler = (props: Props) => {
+const SessionHandler = () => {
   return (
     <div>SessionHandler</div>
   )

@@ -1,15 +1,15 @@
 "use client"
 
-import Image from 'next/image'
+import { ResetPassword as ChangePassword, ForgotPassword as RequestMagicLink } from '@/app/api/services/user.service'
 import { Button } from '@/components/button'
 import { Card } from '@/components/card'
-import { Loader2, ArrowLeft, EyeOff, Eye, CheckCircle2 } from 'lucide-react'
+import { notifier } from '@/components/notifier'
+import { CheckCircle2, Eye, EyeOff, Loader2 } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import React, { useState } from 'react'
-import { useForm, Controller } from 'react-hook-form'
-import { ForgotPassword as RequestMagicLink, ResetPassword as ChangePassword } from '@/app/api/services/user.service'
-import { notifier } from '@/components/notifier'
+import { useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 
 interface ForgotPasswordFormData {
     email: string;
@@ -40,7 +40,6 @@ const ForgotPassword = () => {
     };
 
     const onSubmit = async (data: ForgotPasswordFormData) => {
-        // Validate email
         const emailValidation = validateEmail(data.email);
         if (emailValidation !== true) {
             setError('email', {
@@ -58,12 +57,13 @@ const ForgotPassword = () => {
                 setLoading,
                 (responseData) => {
                     setEmailSent(true);
+                    notifier.success(responseData?.message || 'Password reset link sent successfully', 'Success');
                 }
             );
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error('Forgot password error:', error);
 
-            // Handle different types of errors
             if (error?.errors) {
                 Object.entries(error.errors).forEach(([key, message]) => {
                     setError(key as keyof ForgotPasswordFormData, {
@@ -84,9 +84,8 @@ const ForgotPassword = () => {
         if (emailSent) {
             return (
                 <div className="text-center">
-                   
                     <p className="text-gray-600 mb-6 text-sm">
-                        We've sent a password reset link to {watch('email')}.
+                        We&apos;ve sent a password reset link to {watch('email')}.
                         Check your inbox and follow the instructions.
                     </p>
                     <Button
@@ -222,7 +221,6 @@ const ResetPassword = () => {
         control,
         handleSubmit,
         setError,
-        watch,
         formState: { errors }
     } = useForm<ResetPasswordFormData>({
         defaultValues: {
@@ -238,7 +236,6 @@ const ResetPassword = () => {
     };
 
     const onSubmit = async (data: ResetPasswordFormData) => {
-        // Validate password
         const passwordValidation = validatePassword(data.password);
         if (passwordValidation !== true) {
             setError('password', {
@@ -248,7 +245,6 @@ const ResetPassword = () => {
             return;
         }
 
-        // Validate confirm password
         if (data.password !== data.confirmPassword) {
             setError('confirmPassword', {
                 type: 'manual',
@@ -274,10 +270,10 @@ const ResetPassword = () => {
                     setPasswordResetSuccess(true);
                 }
             );
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error('Reset password error:', error);
 
-            // Handle different types of errors
             if (error?.errors) {
                 Object.entries(error.errors).forEach(([key, message]) => {
                     setError(key as keyof ResetPasswordFormData, {
@@ -295,7 +291,7 @@ const ResetPassword = () => {
     };
 
     const renderContent = () => {
-        
+
 
         if (passwordResetSuccess) {
             return (
@@ -402,7 +398,7 @@ const ResetPassword = () => {
             </form>
         );
 
-        
+
     };
 
     return (

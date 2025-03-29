@@ -1,15 +1,15 @@
 "use client"
 
-import Image from 'next/image'
+import { VerifyAccount } from '@/app/api/services/user.service'
 import { Button } from '@/components/button'
 import { Card } from '@/components/card'
-import { Loader2, CheckCircle2, XCircle } from 'lucide-react'
-import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
-import React, { useEffect, useState } from 'react'
-import { VerifyAccount } from '@/app/api/services/user.service'
 import { notifier } from '@/components/notifier'
 import { RiLoader5Fill } from '@remixicon/react'
+import { CheckCircle2, XCircle } from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 const VerifyEmailFragment = () => {
     const router = useRouter();
@@ -32,12 +32,14 @@ const VerifyEmailFragment = () => {
         const handleVerification = async () => {
             try {
                 await VerifyAccount(token, setLoading, (data) => {
+                    if (data?.message) {
+                        notifier.success(data.message, 'Verification Successful');
+                    }
                     setVerificationStatus('success');
                     setLoading(false);
                     setTimeout(() => {
                         router.push('/auth')
                     }, 3000)
-                    // Optional: you can do something with the data if needed
                 });
             } catch (error: any) {
                 setVerificationStatus('error');
@@ -50,7 +52,8 @@ const VerifyEmailFragment = () => {
         };
 
         handleVerification();
-    }, [searchParams]);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    }, [searchParams, router]);
 
     const renderContent = () => {
         switch (verificationStatus) {
@@ -94,7 +97,7 @@ const VerifyEmailFragment = () => {
                             Verification Failed
                         </h3>
                         <p className="text-gray-600 mb-4">
-                            {errorMessage || 'Unable to verify your email address'}
+                            {!loading && errorMessage || 'Unable to verify your email address'}
                         </p>
                         <div className="space-y-3">
                             <Button

@@ -1,17 +1,17 @@
 "use client"
 
-import Image from 'next/image'
+import { LoginAccount, LoginResponse } from '@/app/api/services/user.service'
 import { Button } from '@/components/button'
 import { Card } from '@/components/card'
+import { notifier } from '@/components/notifier'
 import { AuthContext } from '@/context/auth.context'
-import { LoginAccount, LoginResponse } from '@/app/api/services/user.service'
+import { useStateValue } from '@/global/state.provider'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import React, { useContext, useState } from 'react'
-import { useForm, Controller } from 'react-hook-form'
-import { useStateValue } from '@/global/state.provider'
-import { notifier } from '@/components/notifier'
+import { useContext, useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 
 interface LoginFormData {
   email: string;
@@ -58,7 +58,6 @@ const LoginFragment = () => {
   };
 
   const onSubmit = async (data: LoginFormData) => {
-    // Validate email
     const emailValidation = validateEmail(data.email);
     if (emailValidation !== true) {
       setError('email', {
@@ -68,7 +67,6 @@ const LoginFragment = () => {
       return;
     }
 
-    // Validate password
     const passwordValidation = validatePassword(data.password);
     if (passwordValidation !== true) {
       setError('password', {
@@ -95,15 +93,14 @@ const LoginFragment = () => {
             type: 'SET_TOKEN',
             payload: responseData.token
           })
-          // Small delay to ensure state is set
           await new Promise(resolve => setTimeout(resolve, 100));
           router.replace("/");
         }
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error('Login error:', error);
 
-      // Handle different types of errors
       if (error?.errors) {
         Object.entries(error.errors).forEach(([key, message]) => {
           setError(key as keyof LoginFormData, {
@@ -230,7 +227,7 @@ const LoginFragment = () => {
 
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
-                Don't have an account?{' '}
+                Don&apos;t have an account?{' '}
                 <Link
                   href="/auth?u=new"
                   className="font-medium text-blue-600 hover:text-blue-800"

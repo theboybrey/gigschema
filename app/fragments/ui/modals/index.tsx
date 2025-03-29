@@ -1,33 +1,22 @@
+import { DeleteProject, UpdateProject } from '@/app/api/services/project.service';
+import { ChangePassword, UpdateProfile } from '@/app/api/services/user.service';
 import { Button } from '@/components/button';
+import { notifier } from '@/components/notifier';
+import { AuthContext } from '@/context/auth.context';
 import { useStateValue } from '@/global/state.provider';
 import { formatDate } from '@/helper/date.format';
+import { IProject, IUser } from '@/interface';
 import { Dialog } from '@headlessui/react';
-import { RiCheckLine, RiErrorWarningLine, RiLoader5Fill, RiWalkFill, RiWalkLine } from '@remixicon/react';
+import { RiCheckLine, RiErrorWarningLine, RiLoader5Fill, RiWalkLine } from '@remixicon/react';
 import {
   AlertTriangle,
   Check,
-  Palette,
   PenLine,
   Search,
-  Settings,
-  Shield,
   Trash2,
-  User,
   X
 } from 'lucide-react';
 import React, { Fragment, useContext, useEffect, useState } from 'react';
-import { UpdateProject, DeleteProject } from '@/app/api/services/project.service';
-import { notifier } from '@/components/notifier';
-import { IProject, IUser } from '@/interface';
-import { ChangePassword, UpdateProfile } from '@/app/api/services/user.service';
-import { AuthContext } from '@/context/auth.context';
-
-interface ApiResponse<T> {
-  project: T;
-  message?: string;
-  status?: string;
-}
-
 
 
 interface ChatHistoryModalProps {
@@ -157,9 +146,11 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({ isOpen, onClose }) 
       projectId ?? "",
       token!,
       setLoading,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (response) => {
         setLoading(false);
-        notifier.success("Schema deleted successfully");
+        notifier.success(response.message || "Schema deleted successfully", "Delete Success");
+
       }
     );
   };
@@ -320,6 +311,7 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({ isOpen, onClose }) 
                 key={chat._id ?? index}
                 className={`px-4 py-3 border-b border-gray-100 cursor-pointer ${chat?._id === currentProject?._id ? 'bg-blue-50' : 'hover:bg-gray-50'} group relative`}
                 onMouseEnter={() => setHoveredChatId(chat?._id!)}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 onMouseLeave={() => setHoveredChatId(null)}
               >
                 <div className="flex justify-between items-start">
@@ -380,7 +372,6 @@ interface SettingsModalProps {
 
 const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
   const authContext = useContext(AuthContext);
-  const { state } = useStateValue();
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -674,7 +665,7 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
               <form onSubmit={handlePasswordSubmit} className="space-y-4">
                 {authContext?.user?.provider === "google" ? (
                   <div className="bg-blue-50 p-4 rounded-lg text-sm text-blue-700">
-                    <p>You're signed in with Google. Password management is handled through your Google account.</p>
+                    <p>You&apos;re signed in with Google. Password management is handled through your Google account.</p>
                   </div>
                 ) : (
                   <Fragment>
@@ -749,3 +740,4 @@ const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
 };
 
 export { ChatHistoryModal, SettingsModal };
+

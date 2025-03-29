@@ -35,6 +35,7 @@ export async function LoginAccount(
       notifier.success(data.message, "Login Successful");
       callback(data);
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error?.message;
     notifier.error(errorMessage, "Authentication Error");
@@ -73,6 +74,7 @@ export async function LogoutAccount(
     } else {
       callback();
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     notifier.error(
       error?.response?.data?.message ||
@@ -111,6 +113,7 @@ export async function RegisterAccount(
       `Registration Successful`
     );
     callback(data);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     notifier.error(
       error?.message ||
@@ -144,6 +147,7 @@ export async function VerifyAccount(
       `Verification Successful`
     );
     callback(data);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     notifier.error(
       error?.message ||
@@ -180,6 +184,7 @@ export async function VerifyOTP(
       `Verification Successful`
     );
     callback(data);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     notifier.error(
       error?.message ||
@@ -214,6 +219,7 @@ export async function ForgotPassword(
       );
     }
     callback(data?.data);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     notifier.error(
       error?.message ||
@@ -249,6 +255,7 @@ export async function ResetPassword(
       );
     }
     callback(data?.data);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     notifier.error(
       error?.message ||
@@ -283,6 +290,7 @@ export async function GetProfile(
       );
     }
     callback(data?.data);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     notifier.error(
       error?.message ||
@@ -319,6 +327,7 @@ export async function UpdateProfile(
       );
     }
     callback(data?.data);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     notifier.error(
       error?.message ||
@@ -356,6 +365,7 @@ export async function ChangePassword(
       );
     }
     callback(data?.data);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     notifier.error(
       error?.message ||

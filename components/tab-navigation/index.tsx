@@ -15,7 +15,9 @@ function getSubtree(
     return React.cloneElement(firstChild, {
         ...(typeof firstChild.props === 'object' ? firstChild.props : {}),
         ...((typeof content === "function"
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             ? { children: content((firstChild as React.ReactElement<any>).props.children) }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             : { children: content }) as any),
     })
 }

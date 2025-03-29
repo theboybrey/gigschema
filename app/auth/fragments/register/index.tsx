@@ -142,7 +142,7 @@ const RegisterPage = () => {
         phone: data.phone
       }, setLoading, async (responseData: LoginResponse) => {
         if (responseData && responseData.user) {
-          setAuthState(responseData.user);
+          setAuthState(responseData.user, responseData.token);
           dispatch({
             type: 'SET_USER',
             payload: responseData.user
@@ -151,6 +151,7 @@ const RegisterPage = () => {
           router.replace("/");
         }
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error('Registration error:', error);
 
@@ -340,7 +341,7 @@ const RegisterPage = () => {
               />
               <div className="mt-2 flex items-center text-gray-600 text-xs">
                 <Info className="mr-2 text-blue-500" size={16} />
-                We'll send a verification email to confirm your account
+                We&apos;ll send a verification email to confirm your account
               </div>
             </div>
 
@@ -507,7 +508,7 @@ const RegisterPage = () => {
           <div className="text-center space-y-6">
             <div className="bg-slate-50 border border-slate-200 text-blue-800 px-6 py-8 rounded-xl">
               <p className="text-gray-600 mb-4 text-sm">
-                You're about to join our platform.
+                You&apos;re about to join our platform.
                 Review your details and click Submit to complete registration.
               </p>
               <div className="bg-white border border-blue-100 rounded-lg p-4 text-left">

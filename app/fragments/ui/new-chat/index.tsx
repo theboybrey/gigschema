@@ -9,10 +9,10 @@ import {
     Server,
     XIcon
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import React, { useContext, useState } from "react";
 import { FaDatabase } from "react-icons/fa";
 import { SiMongodb } from "react-icons/si";
-import { useRouter } from "next/navigation";
 
 const SchemaTypeIcon = {
     sql: <FaDatabase className="w-5 h-5 " />,
@@ -66,6 +66,7 @@ const NewProjectModal = ({ isOpen, onClose }: {
 
         setLoading(true);
         try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await CreateProjectService(details as any, authContext.token, setLoading, (response) => {
                 if (response.project) {
                     setDetails({
@@ -87,7 +88,7 @@ const NewProjectModal = ({ isOpen, onClose }: {
             setLoading(false);
         }
     };
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const selectTemplate = (template: any) => {
         setDetails(prev => ({
             ...prev,

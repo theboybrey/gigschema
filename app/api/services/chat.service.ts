@@ -1,7 +1,6 @@
-import { RetryOperation } from "@/helper/operation.retry";
+import { notifier } from "@/components/notifier";
 import { IChat } from "@/interface/";
 import Axios from "../axios";
-import { notifier } from "@/components/notifier";
 
 interface ApiResponse<T> {
   chat?: T;
@@ -33,6 +32,7 @@ export async function CreateChat(
     if (data && data.chat) {
       callback(data);
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error?.message;
     notifier.error(errorMessage, "New Chat Error");
@@ -63,6 +63,7 @@ export async function GetChats(
     if (data && data.chats) {
       callback(data);
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error?.message;
     notifier.error(errorMessage, "Unavailable Chat History");
@@ -94,6 +95,7 @@ export async function GetChat(
     if (data && data.chat) {
       callback(data);
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error?.message;
     notifier.error(errorMessage, "Unavailble Chat History ");
@@ -125,6 +127,7 @@ export async function ToggleArchiveChat(
     if (data && data.chat) {
       callback(data);
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error?.message;
     notifier.error(errorMessage, "Chat Archive Error");
@@ -158,6 +161,7 @@ export async function RenameChat(
     if (data && data.chat) {
       callback(data);
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error?.message;
     notifier.error(errorMessage, "Chat Rename Error");
@@ -189,6 +193,7 @@ export async function DeleteChat(
     if (data && data.chat) {
       callback(data);
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error?.message;
     notifier.error(errorMessage, "Chat Deletion Error");

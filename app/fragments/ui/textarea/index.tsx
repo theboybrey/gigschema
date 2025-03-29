@@ -1,18 +1,16 @@
 "use client"
+import { Button } from '@/components/button'
+import { notifier } from '@/components/notifier'
 import { useStateValue } from '@/global/state.provider'
 import { cx } from '@/lib/utils'
-import React, { useEffect, useRef, useState } from 'react'
-import { FaDatabase } from "react-icons/fa"
-import { SiMongodb } from "react-icons/si"
-import { BsCodeSlash } from "react-icons/bs"
-import { FiChevronDown, FiChevronUp, FiCopy, FiMaximize } from "react-icons/fi"
 import { AnimatePresence, motion } from 'framer-motion'
-import { notifier } from '@/components/notifier'
-import { Button } from '@/components/button'
+import React, { useEffect, useRef, useState } from 'react'
+import { BsCodeSlash } from "react-icons/bs"
+import { FaDatabase } from "react-icons/fa"
+import { FiChevronDown, FiChevronUp, FiCopy, FiMaximize } from "react-icons/fi"
+import { SiMongodb } from "react-icons/si"
 
-import { GetChats, GetChat, CreateChat } from '@/app/api/services/chat.service'
-import { GetProject, ContinueConversation } from '@/app/api/services/project.service'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { ContinueConversation, GetProject } from '@/app/api/services/project.service'
 import LoaderFragment from '../loader'
 
 type MessageType = {
@@ -22,6 +20,7 @@ type MessageType = {
     timestamp: Date;
     schema?: {
         type: 'sql' | 'nosql';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         data: any;
     }
     artifacts?: Array<{
@@ -149,7 +148,7 @@ const ArtifactModal = ({
     );
 };
 
-
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const EntityTable = ({ data, schemaType }: { data: any, schemaType: 'sql' | 'nosql' }) => {
     const [isExpanded, setIsExpanded] = useState(true);
 
@@ -202,6 +201,7 @@ const EntityTable = ({ data, schemaType }: { data: any, schemaType: 'sql' | 'nos
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {isArray ? (
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 data.map((item: any, idx: number) => (
                                     <tr key={idx} className="hover:bg-gray-50">
                                         {keys.map((key) => (
@@ -565,65 +565,6 @@ const MessageComponent = ({ message }: { message: MessageType }) => {
         </>
     );
 };
-const generateAIResponse = (message: string, schemaType: 'sql' | 'nosql'): MessageType => {
-    const lowerMessage = message.toLowerCase();
-    let aiContent = "I'm not sure how to respond to that.";
-    let schemaData = null;
-    let artifacts = null;
-
-    if (lowerMessage.includes('select') && lowerMessage.includes('from')) {
-        aiContent = "I've executed your SQL query and here are the results:";
-        schemaData = [
-            { id: 1, name: "John Doe", email: "john@example.com", role: "Admin" },
-            { id: 2, name: "Jane Smith", email: "jane@example.com", role: "User" },
-            { id: 3, name: "Bob Johnson", email: "bob@example.com", role: "User" }
-        ];
-    }
-    else if (lowerMessage.includes('find(') || lowerMessage.includes('aggregate(')) {
-        aiContent = "Here are the results from your MongoDB query:";
-        schemaData = [
-            { _id: "61fcae3db2d3a72d8c0b83f1", name: "John Doe", email: "john@example.com", tags: ["admin", "manager"] },
-            { _id: "61fcae3db2d3a72d8c0b83f2", name: "Jane Smith", email: "jane@example.com", tags: ["user"] },
-        ];
-    }
-    else if (lowerMessage.includes('code') || lowerMessage.includes('function') || lowerMessage.includes('javascript')) {
-        aiContent = "Here's a simple JavaScript function that might help:\n\n```javascript\nfunction processData(data) {\n  return data.map(item => {\n    return {\n      ...item,\n      processed: true,\n      timestamp: new Date()\n    };\n  });\n}\n```\n\nYou can use this function to process your data arrays.";
-    } else if (lowerMessage.includes('paste') && lowerMessage.length > 500) {
-        aiContent = "I've analyzed your pasted content:";
-        artifacts = [
-            {
-                id: Date.now().toString(),
-                title: "Pasted Content",
-                content: message,
-                type: 'text'
-            }
-        ];
-    }
-    else {
-        const responses = [
-            "I understand you're working on a chat interface. What specific functionality would you like help with?",
-            "Your UI design is coming along nicely. Would you like suggestions on improving the user experience?",
-            "That's an interesting approach. Have you considered implementing typing indicators to make the chat feel more dynamic?",
-            "I'd be happy to help with that. Could you provide more specific requirements?"
-        ];
-        aiContent = responses[Math.floor(Math.random() * responses.length)];
-    }
-
-    return {
-        id: Date.now().toString(),
-        content: aiContent,
-        sender: 'ai',
-        timestamp: new Date(),
-        schema: schemaData ? {
-            type: schemaType,
-            data: schemaData
-        } : undefined,
-        artifacts: artifacts?.map(artifact => ({
-            ...artifact,
-            type: artifact.type as 'text' | 'code' | 'json'
-        })) || undefined
-    };
-};
 
 const processLargeContent = (content: string): NonNullable<MessageType['artifacts']>[0] | null => {
     if (!content || content.length < 500) return null;
@@ -634,7 +575,11 @@ const processLargeContent = (content: string): NonNullable<MessageType['artifact
     try {
         JSON.parse(content);
         type = 'json';
-    } catch (e) {
+    } catch (e: any) {
+        // If JSON parsing fails, check for other types
+        if (process.env.NODE_ENV === 'development') {
+            console.error('Invalid JSON:', e);
+        }
         if (
             content.includes('function') ||
             content.includes('class') ||
@@ -680,6 +625,7 @@ const TextAreaFragment = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const token = localStorage.getItem('token') || '';
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mapToMessageType = (msg: any): MessageType => {
         let schema: MessageType['schema'] = undefined;
         let artifacts: MessageType['artifacts'] = [];
@@ -703,6 +649,7 @@ const TextAreaFragment = () => {
                     try {
                         const jsonData = JSON.parse(codeContent);
                         if (typeof jsonData === 'object' && !Array.isArray(jsonData) && jsonData !== null) {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const isSchema = Object.values(jsonData).some((val: any) =>
                                 typeof val === 'object' && (val.type || val.ref || Object.values(val).some(v => typeof v === 'string'))
                             );
@@ -729,6 +676,9 @@ const TextAreaFragment = () => {
                             }
                         }
                     } catch (e) {
+                        if (process.env.NODE_ENV === 'development') {
+                            console.error('Invalid JSON:', e);
+                        }
                         artifacts.push({
                             id: `${msg._id || Date.now()}-${artifacts.length}`,
                             title: 'JSON Snippet (Invalid)',
@@ -737,7 +687,7 @@ const TextAreaFragment = () => {
                             language: 'json',
                         });
                     }
-                } else if (language === 'sql' || codeContent.includes('CREATE TABLE') || codeContent.includes('SELECT ')) {
+                } else if (language === 'sql' || codeContent.includes('CREATE ') || codeContent.includes('SELECT ')) {
                     artifacts.push({
                         id: `${msg._id || Date.now()}-${artifacts.length}`,
                         title: 'SQL Snippet',
@@ -946,6 +896,7 @@ const TextAreaFragment = () => {
                     setMessages(mappedMessages);
                 }
             );
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             notifier.error('Failed to continue conversation', error.message);
         } finally {
@@ -1100,7 +1051,7 @@ const TextAreaFragment = () => {
 };
 
 const ChatRoomFragment = () => {
-    const { state: { currentConversation, currentProject }, dispatch } = useStateValue();
+    const { state: { currentProject }, dispatch } = useStateValue();
     const [isLoading, setIsLoading] = useState(false);
     const [token, setToken] = useState<string | null>(null);
 
@@ -1135,6 +1086,7 @@ const ChatRoomFragment = () => {
                         }
                     }
                 );
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (error: any) {
                 console.error('Failed to fetch project:', error.message);
                 dispatch({
@@ -1157,4 +1109,4 @@ const ChatRoomFragment = () => {
     );
 };
 
-export { ChatRoomFragment, TextAreaFragment, EntityTable, DocumentPreview, CodeArtifact };
+export { ChatRoomFragment, CodeArtifact, DocumentPreview, EntityTable, TextAreaFragment }

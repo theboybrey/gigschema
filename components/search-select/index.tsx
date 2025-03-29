@@ -1,8 +1,7 @@
 import React from 'react'
 
-type Props = {}
 
-const SearchSelect = (props: Props) => {
+const SearchSelect = () => {
     return (
         <div>SearchSelect</div>
     )
