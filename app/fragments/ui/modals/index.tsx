@@ -88,7 +88,7 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({ isOpen, onClose }) 
     };
 
     dispatch({
-      type: 'UPDATE_PROJECT_OPTIMISTIC' as any,
+      type: 'UPDATE_PROJECT_OPTIMISTIC' as any, // eslint-disable-line @typescript-eslint/no-explicit-any
       payload: updatedProject
     });
 
@@ -309,17 +309,19 @@ const ChatHistoryModal: React.FC<ChatHistoryModalProps> = ({ isOpen, onClose }) 
             filteredChats.map((chat, index) => (
               <div
                 key={chat._id ?? index}
-                className={`px-4 py-3 border-b border-gray-100 cursor-pointer ${chat?._id === currentProject?._id ? 'bg-blue-50' : 'hover:bg-gray-50'} group relative`}
-                onMouseEnter={() => setHoveredChatId(chat?._id!)}
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                className={`px-4 py-3 border-b border-gray-100 cursor-pointer ${chat === currentProject ? 'bg-blue-50' : 'hover:bg-gray-50'} group relative`}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                onMouseEnter={() => setHoveredChatId(chat._id!)}
                 onMouseLeave={() => setHoveredChatId(null)}
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className={`text-sm font-medium ${chat?._id === currentProject?._id ? 'text-blue-600' : 'text-gray-800'}`}>
+                    {/* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */}
+                    <p className={`text-sm font-medium ${chat == currentProject? 'text-blue-600' : 'text-gray-800'}`}>
                       {chat.name}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">{formatDate(chat?.createdAt!)}</p>
+                    <p className="text-xs text-gray-500 mt-1">{formatDate(chat.createdAt!)}</p>
                   </div>
                   {hoveredChatId === chat._id && (
                     <div className="flex space-x-2">

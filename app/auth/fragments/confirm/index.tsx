@@ -41,6 +41,7 @@ const VerifyEmailFragment = () => {
                         router.push('/auth')
                     }, 3000)
                 });
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (error: any) {
                 setVerificationStatus('error');
                 setErrorMessage(

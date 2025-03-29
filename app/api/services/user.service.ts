@@ -94,6 +94,7 @@ export async function LogoutAccount(
 export async function RegisterAccount(
   info: Partial<IUser>,
   setLoading: (loading: boolean) => void,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   callback: (e: any) => void
 ) {
   setLoading(true);
@@ -129,6 +130,7 @@ export async function RegisterAccount(
 export async function VerifyAccount(
   token: string,
   setLoading: (loading: boolean) => void,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   callback: (e: any) => void
 ) {
   setLoading(true);
@@ -164,7 +166,7 @@ export async function VerifyOTP(
   token: string,
   code: string,
   setLoading: (loading: boolean) => void,
-  callback: (e: any) => void
+  callback: (e: any) => void // eslint-disable-line @typescript-eslint/no-explicit-any
 ) {
   setLoading(true);
   try {
@@ -200,7 +202,7 @@ export async function VerifyOTP(
 export async function ForgotPassword(
   email: string,
   setLoading: (loading: boolean) => void,
-  callback: (e: any) => void
+  callback: (e: any) => void // eslint-disable-line @typescript-eslint/no-explicit-any
 ) {
   try {
     const { data } = await Axios({
@@ -236,7 +238,7 @@ export async function ResetPassword(
   token: string,
   password: string,
   setLoading: (loading: boolean) => void,
-  callback: (e: any) => void
+  callback: (e: any) => void // eslint-disable-line @typescript-eslint/no-explicit-any
 ) {
   try {
     const { data } = await Axios({
@@ -271,7 +273,7 @@ export async function ResetPassword(
 export async function GetProfile(
   token: string,
   setLoading: (loading: boolean) => void,
-  callback: (e: any) => void
+  callback: (e: any) => void // eslint-disable-line @typescript-eslint/no-explicit-any
 ) {
   try {
     const { data } = await Axios({
@@ -307,7 +309,7 @@ export async function UpdateProfile(
   updates: Partial<IUser>,
   token: string,
   setLoading: (loading: boolean) => void,
-  callback: (e: any) => void
+  callback: (e: any) => void // eslint-disable-line @typescript-eslint/no-explicit-any
 ) {
   try {
     const { data } = await Axios({
@@ -345,7 +347,7 @@ export async function ChangePassword(
   token: string,
   info: { oldPassword: string; newPassword: string },
   setLoading: (loading: boolean) => void,
-  callback: (e: any) => void
+  callback: (e: any) => void // eslint-disable-line @typescript-eslint/no-explicit-any
 ) {
   try {
     const { data } = await Axios({

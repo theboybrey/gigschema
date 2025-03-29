@@ -20,7 +20,7 @@ type MessageType = {
     timestamp: Date;
     schema?: {
         type: 'sql' | 'nosql';
-        data: any;
+        data: any // eslint-disable-line @typescript-eslint/no-explicit-any
     }
     artifacts?: Array<{
         id: string
@@ -147,6 +147,7 @@ const ArtifactModal = ({
     );
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any   
 const EntityTable = ({ data, schemaType }: { data: any, schemaType: 'sql' | 'nosql' }) => {
     const [isExpanded, setIsExpanded] = useState(true);
 
@@ -199,6 +200,7 @@ const EntityTable = ({ data, schemaType }: { data: any, schemaType: 'sql' | 'nos
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {isArray ? (
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 data.map((item: any, idx: number) => (
                                     <tr key={idx} className="hover:bg-gray-50">
                                         {keys.map((key) => (
@@ -583,6 +585,7 @@ const processLargeContent = (content: string): NonNullable<MessageType['artifact
             typeof jsonData === 'object' &&
             !Array.isArray(jsonData) &&
             jsonData !== null &&
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             Object.values(jsonData).some((val: any) =>
                 typeof val === 'object' && (val.type || val.ref)
             )
@@ -774,7 +777,7 @@ const TextAreaFragment = () => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const token = localStorage.getItem('token') || '';
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mapToMessageType = (msg: any): MessageType => {
         const baseMessage: MessageType = {
             id: msg._id || Date.now().toString(),
@@ -953,6 +956,7 @@ const TextAreaFragment = () => {
                     setMessages(mappedMessages);
                 }
             );
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             notifier.error('Failed to continue conversation', error.message);
         } finally {
@@ -1142,6 +1146,7 @@ const ChatRoomFragment = () => {
                         }
                     }
                 );
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } catch (error: any) {
                 console.error('Failed to fetch project:', error.message);
                 dispatch({

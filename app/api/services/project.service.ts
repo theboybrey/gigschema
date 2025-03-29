@@ -127,6 +127,7 @@ export async function GetProject(
     if (data && data.project) {
       callback(data);
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error?.message;
     notifier.error(errorMessage, "Project Fetch Error");
