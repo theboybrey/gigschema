@@ -2,13 +2,13 @@ import { GetChats } from "@/app/api/services/chat.service";
 import { GetProjects } from "@/app/api/services/project.service";
 import { AuthContext } from "@/context/auth.context";
 import { useStateValue } from "@/global/state.provider";
-import { RiAlertLine, RiBarcodeBoxLine, RiLoader5Fill } from "@remixicon/react";
+import { IProject } from "@/interface";
+import { RiAlertLine, RiLoader5Fill } from "@remixicon/react";
 import { ChevronDownIcon, LogOutIcon, PlusIcon, SettingsIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useContext, useEffect, useState } from "react";
 import { ChatHistoryModal, SettingsModal } from "../modals";
 import NewProjectModal from "../new-chat";
-import { IProject } from "@/interface";
-import { useRouter } from "next/navigation";
 
 const HeaderFragment = () => {
     const [loading, setLoading] = useState(false);
@@ -178,38 +178,58 @@ const HeaderFragment = () => {
                             <div className="relative">
                                 <button
                                     onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                                    className="relative flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold hover:opacity-90 transition-all"
+                                    className="relative flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium hover:shadow-md transition-all duration-200 ring-2 ring-white"
                                 >
                                     {getUserInitials(authContext?.user?.firstName + " " + authContext?.user?.lastName || '')}
                                 </button>
 
                                 {isUserMenuOpen && (
-                                    <div className="absolute right-0 mt-2 w-56 origin-top-right bg-white divide-y divide-gray-100 rounded-lg shadow-lg ring-1 ring-black/5 focus:outline-none">
-                                        <div className="px-4 py-3 border-b border-gray-100">
-                                            <p className="text-sm font-medium text-gray-900 truncate">
-                                                {authContext?.user?.firstName + " " + authContext?.user?.lastName}
-                                            </p>
-                                            <p className="text-xs text-gray-500 truncate">
-                                                {authContext?.user?.email}
-                                            </p>
+                                    <>
+                                        {/* Backdrop overlay for closing */}
+                                        <div
+                                            className="fixed inset-0 z-40"
+                                            onClick={() => setIsUserMenuOpen(false)}
+                                        ></div>
+
+                                        {/* User menu */}
+                                        <div className="absolute right-0 mt-2 w-64 origin-top-right bg-white rounded-xl shadow-xl z-50 overflow-hidden border border-gray-100">
+                                            {/* User info with improved avatar */}
+                                            <div className="px-5 py-4 bg-gray-50/50">
+                                                <div className="flex items-center space-x-3">
+                                                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center text-white font-medium text-lg">
+                                                        {getUserInitials(authContext?.user?.firstName + " " + authContext?.user?.lastName || '')}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-semibold text-gray-900 truncate">
+                                                            {authContext?.user?.firstName + " " + authContext?.user?.lastName}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500 truncate mt-0.5">
+                                                            {authContext?.user?.email}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Menu items */}
+                                            <div className="p-2">
+                                                <button
+                                                    onClick={handleSettings}
+                                                    className="group flex w-full items-center rounded-lg px-3 py-2.5 text-sm hover:bg-gray-50 transition-colors duration-150"
+                                                >
+                                                    <SettingsIcon className="mr-3 w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+                                                    <span className="text-gray-700">Settings</span>
+                                                </button>
+
+                                                <button
+                                                    onClick={handleLogout}
+                                                    className="group flex w-full items-center rounded-lg px-3 py-2.5 text-sm hover:bg-rose-50 transition-colors duration-150 mt-1"
+                                                >
+                                                    <LogOutIcon className="mr-3 w-4 h-4 text-rose-400 group-hover:text-rose-600" />
+                                                    <span className="text-rose-600">Logout</span>
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div className="px-1 py-1">
-                                            <button
-                                                onClick={handleSettings}
-                                                className="group flex w-full items-center rounded-md px-2 py-2 text-sm hover:bg-gray-100"
-                                            >
-                                                <SettingsIcon className="mr-2 w-4 h-4 text-gray-500" />
-                                                Settings
-                                            </button>
-                                            <button
-                                                onClick={handleLogout}
-                                                className="group flex w-full items-center rounded-md px-2 py-2 text-sm bg-rose-100 text-rose-600"
-                                            >
-                                                <LogOutIcon className="mr-2 w-4 h-4 text-rose-500" />
-                                                Logout
-                                            </button>
-                                        </div>
-                                    </div>
+                                    </>
                                 )}
                             </div>
                         </div>

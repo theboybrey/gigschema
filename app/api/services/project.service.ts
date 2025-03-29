@@ -175,6 +175,7 @@ export async function DeleteProject(
   token: string,
   setLoading: (loading: boolean) => void,
   callback: (response: ApiResponse<IProject>) => void
+  
 ) {
   setLoading(true);
 
