@@ -58,10 +58,9 @@ Gigschema is a web application that enables users to design and generate databas
    ```
 
 3. Set up environment variables:
-   Create a `.env.local` file and configure necessary API keys and database credentials:
+   Create a `.env` file and configure necessary API keys and database credentials from the `/configurations` directory and add this to your `.env`:
    ```sh
-   NEXT_PUBLIC_AI_API_KEY=your_api_key_here
-   DATABASE_URL=your_database_url_here
+   NODE_ENV=development
    ```
 
 ### Running the Project
