@@ -1,18 +1,11 @@
-import { AuthProvider } from "@/context/auth.context"
-import React from "react"
-import { AuthorizeResourceHeaders } from "."
+"use client"
 
+import { AuthenticatorFragment } from "./fragments/guard"
 
-export default function AuthenticatorFragment({ children }: {
-    children: React.ReactNode
-}) {
-
+export default function AuthPage() {
     return (
-        <AuthProvider>
-            <AuthorizeResourceHeaders>
-                {children}
-            </AuthorizeResourceHeaders>
-        </AuthProvider>
+        <AuthenticatorFragment>
+            <></>
+        </AuthenticatorFragment>
     )
 }
-
